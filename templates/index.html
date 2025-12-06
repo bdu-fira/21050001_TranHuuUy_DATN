@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trường Đại Học Bình Dương</title>
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="stylesheet" type="text/css" href="/static/styles1.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+
+<div class="header">
+    <a href="#" class="btn analysis-btn-top">Đăng nhập<br>Phân Tích MXH<i class="fas fa-chart-line"></i></a>
+    <div class="top-menu">
+        <a href="#">ĐƯỜNG DÂY NÓNG</a>
+        <a href="#">PH CÀ MAU</a>
+        <a href="#">THƯ VIỆN</a>
+        <a href="#">CỔNG SINH VIÊN</a>
+        <a href="#">TRANG ĐÀO TẠO</a>
+        <a href="#">BDU TUYỂN DỤNG</a>
+    </div>
+    <div class="image-container">
+        <img src="/static/logo2.png" alt="Hình ảnh 1">
+        <img src="/static/qc1.png" alt="Hình ảnh 2">
+    </div>
+    <div class="main-menu">
+        <a href="#">TRANG CHỦ</a>
+        <span class="menu-divider">|</span>
+        <a href="#">GIỚI THIỆU</a>
+        <span class="menu-divider">|</span>
+        <a href="#">TUYỂN SINH</a>
+        <span class="menu-divider">|</span>
+        <a href="#">KHOA - VIỆN</a>
+        <span class="menu-divider">|</span>
+        <a href="#">PHÒNG BAN</a>
+        <span class="menu-divider">|</span>
+        <a href="#">VIỆN</a>
+        <span class="menu-divider">|</span>
+        <a href="#">TRUNG TÂM</a>
+        <span class="menu-divider">|</span>
+        <a href="#">SINH VIÊN</a>
+        <span class="menu-divider">|</span>
+        <a href="#">TIN TỨC</a>
+    </div>
+</div>
+
+<div class="slider">
+    <img src="/static/qc2.png" alt="Slider Image 1" class="slider-image active">
+    <img src="/static/qc3.jpg" alt="Slider Image 2" class="slider-image">
+    <img src="/static/qc4.png" alt="Slider Image 2" class="slider-image">
+</div>
+
+<script>
+    let currentIndex = 0;
+    const images = document.querySelectorAll('.slider-image');
+
+    function showNextImage() {
+        images[currentIndex].classList.remove('active');    
+        currentIndex = (currentIndex + 1) % images.length; 
+        images[currentIndex].classList.add('active');     
+    }
+
+    setInterval(showNextImage, 5000);
+</script>
+
+<div class="quick-buttons">
+    <a href="#" class="quick-btn">PH CÀ MAU</a>
+    <a href="#" class="quick-btn">TUYỂN SINH</a>
+    <a href="#" class="quick-btn">TUYỂN DỤNG</a>
+    <a href="#" class="quick-btn">HƯỚNG NGHIỆP</a>
+    <a href="#" class="quick-btn">HỢP TÁC QUỐC TẾ</a>
+    <a href="#" class="quick-btn">GÓC HỌC ĐƯỜNG</a>
+</div>
+
+<div class="feedback-container-inline">
+    <div class="feedback-form-inline">
+        <div class="feedback-header-inline">
+            <h3>ĐÓNG GÓP Ý KIẾN</h3>
+        </div>
+        <form id="feedbackFormInline">
+            <div class="form-group">
+                <label for="nameInputInline">Họ và Tên:</label>
+                <input type="text" id="nameInputInline" placeholder="Nhập tên của bạn" required>
+            </div>
+            <div class="form-group">
+                <label for="feedbackInputInline">Ý Kiến Góp Ý:</label>
+                <textarea id="feedbackInputInline" placeholder="Nhập ý kiến góp ý" required></textarea>
+            </div>
+            <div class="feedback-actions-inline">
+                <button type="button" onclick="clearFeedbackInline()" class="clear-btn">Xóa</button>
+                <button type="submit" class="submit-btn">Gửi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // === BẢO MẬT: Hàm lấy CSRF Token từ thẻ Meta ===
+    function getCsrfToken() {
+        const tokenMeta = document.querySelector('meta[name="csrf-token"]');
+        return tokenMeta ? tokenMeta.getAttribute('content') : '';
+    }
+
+    function clearFeedbackInline() {
+        document.getElementById('nameInputInline').value = '';
+        document.getElementById('feedbackInputInline').value = '';
+    }
+
+    document.getElementById('feedbackFormInline').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const nameInput = document.getElementById('nameInputInline');
+        const feedbackInput = document.getElementById('feedbackInputInline');
+        
+        const name = nameInput.value.trim();
+        const feedback = feedbackInput.value.trim();
+        
+        if (!name || !feedback) {
+            alert('Vui lòng nhập đầy đủ thông tin');
+            return;
+        }
+        
+        if (name.length > 50) {
+            alert('Tên không được quá 50 ký tự');
+            return;
+        }
+        
+        if (feedback.length > 500) {
+            alert('Nội dung góp ý không được quá 500 ký tự');
+            return;
+        }
+        
+        fetch('/submit_feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()
+            },
+            body: JSON.stringify({
+                name: name,
+                feedback: feedback
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Cảm ơn bạn đã góp ý!');
+                nameInput.value = '';
+                feedbackInput.value = '';
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Lỗi:', error);
+            alert('Có lỗi xảy ra. Vui lòng thử lại.');
+        });
+    });
+</script>
+
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Đăng Nhập</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Tên đăng nhập:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group password-container">
+                <label for="password">Mật khẩu:</label>
+                <input type="password" id="password" name="password" required>
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility()">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+            <button type="submit" class="login-btn">Đăng Nhập</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loginModal = document.getElementById('loginModal');
+        const predictBtn = document.querySelector('.btn');
+        const closeBtn = document.querySelector('.close');
+        const loginForm = document.getElementById('loginForm');
+
+        predictBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            loginModal.style.display = 'block';
+        });
+
+        closeBtn.addEventListener('click', function() {
+            loginModal.style.display = 'none';
+        });
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = '/predict';
+                } else {
+                    alert(data.message || 'Đăng nhập thất bại');
+                }
+            })
+            .catch(error => {
+                console.error('Lỗi:', error);
+                alert('Có lỗi xảy ra. Vui lòng thử lại.');
+            });
+        });
+    });
+
+    function togglePasswordVisibility() {
+        const passwordInput = document.getElementById('password');
+        const eyeIcon = document.querySelector('.password-toggle i');
+        
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordInput.type = 'password';
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+        }
+    }
+</script>
+
+<div class="footer">
+    <div class="container">
+        <div class="column">
+            <div class="title">
+                <i class="fas fa-home"></i>
+                <span>TRƯỜNG ĐẠI HỌC BÌNH DƯƠNG</span>
+            </div>
+            <p><i class="fas fa-map-marker-alt"></i> Địa chỉ: Số 504 Đại lộ Bình Dương, P. Phú Lợi, Thành phố Hồ Chí Minh.</p>
+            <p><i class="fas fa-phone-alt"></i> 0789 269 219 - 0274 6 511 756 - 0274 3 822 058</p>
+            <p><i class="fas fa-envelope"></i> info@bdu.edu.vn</p>
+            <p><i class="fas fa-globe"></i> <a href="https://bdu.edu.vn" target="_blank">https://bdu.edu.vn</a></p>
+            <hr>
+            <div class="title">
+                <i class="fas fa-home"></i>
+                <span>CƠ SỞ BẾN CÁT</span>
+            </div>
+            <p><i class="fas fa-map-marker-alt"></i> Địa chỉ: Ấp Kiến Điền, P. Long Nguyên, Thành phố Hồ Chí Minh.</p>
+            <p><i class="fas fa-phone-alt"></i> 0789 269 219 - 0274 6 511 756</p>
+        </div>
+        <div class="column">
+            <div class="title">
+                <i class="fas fa-home"></i>
+                <span>PHÂN HIỆU CÀ MAU</span>
+            </div>
+            <p><i class="fas fa-map-marker-alt"></i> Địa chỉ: Số 3, Lê Thị Riêng, P. 5, Tp. Cà Mau, T. Cà Mau.</p>
+            <p><i class="fas fa-phone-alt"></i> 0971 936 219 – 0290 6 539 468</p>
+            <p><i class="fas fa-envelope"></i> tuyensinh.cm@bdu.edu.vn</p>
+            <p><i class="fas fa-globe"></i> <a href="https://camau.bdu.edu.vn" target="_blank">https://camau.bdu.edu.vn</a></p>
+        </div>
+        <div class="column">
+            <div class="section-title">
+                <i class="fas fa-chart-line"></i>
+                <span>TUYỂN SINH</span>
+            </div>
+            <p><a href="#">>> Tiến sĩ</a></p>
+            <p><a href="#">>> Thạc sĩ</a></p>
+            <p><a href="#">>> Đại học chính quy</a></p>
+            <p><a href="#">>> Liên thông</a></p>
+            <p><a href="#">>> Văn bằng 2</a></p>
+            <p><a href="#">>> Vừa làm vừa học</a></p>
+        </div>
+        <div class="column">
+            <div class="section-title">
+                <i class="fas fa-chart-line"></i>
+                <span>LIÊN KẾT</span>
+            </div>
+            <p><a href="#">>> Trang tuyển sinh</a></p>
+            <p><a href="#">>> Xét tuyển online</a></p>
+            <p><a href="#">>> Trang đào tạo</a></p>
+            <p><a href="#">>> Trang Sau đại học</a></p>
+            <p><a href="#">>> Trang Cà Mau</a></p>
+            <p><a href="#">>> Bộ Giáo dục và Đào tạo</a></p>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        © 2023 - Trường Đại học Bình Dương | All rights reserved.
+    </div>
+    <div class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+</div>
+</body>
+</html>

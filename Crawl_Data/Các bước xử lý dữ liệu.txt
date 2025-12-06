@@ -1,0 +1,38 @@
+1. Chạy file craw.py để mở giao diện cào dữ liệu. Nhập link google map của địa điểm cần cào dữ liệu sau đó ấn
+nút cào dữ liệu sẽ lấy dữ liệu về và lưu vào file reviews.json
+
+
+2. Chạy file preprocess.py để:
+- Loại bỏ bình luận không hợp lệ: Xóa các bình luận có trường text không phải là chuỗi ký tự hoặc có nội dung quá ngắn 
+(chỉ có 1 ký tự hoặc trống).
+- Xóa trường không cần thiết: Loại bỏ hai trường thông tin là rating (đánh giá sao) và rtime (thời gian đăng).
+- Tập hợp tất cả nội dung văn bản (text) từ các bình luận đã được lọc vào một danh sách duy nhất để chuẩn bị cho bước làm sạch sâu.
+
+* Làm Sạch Sâu Nội Dung Văn Bản:
+    - Đưa tất cả các ký tự về cùng một dạng chuẩn hóa (NFC) để đảm bảo tính nhất quán.
+    - Xử lý ký tự xuống dòng: Thay thế các ký tự ngắt dòng (\n) bằng khoảng trắng.
+    - Loại bỏ ký tự đặc biệt
+    - Loại bỏ Biểu Tượng Cảm Xúc (Emoji)
+    - Thay thế từ viết tắt và teencode: Đọc file acronym.txt để thay thế các từ viết tắt bằng dạng đầy đủ của chúng 
+    (ví dụ: "ko" -> "không", "lm" -> "làm").
+    - Xóa các khoảng trắng thừa ở đầu, cuối và thay thế nhiều khoảng trắng liên tiếp bằng một khoảng trắng duy nhất.
+    - Loại Bỏ Các Bình Luận Trùng Lặp
+    - Sau khi văn bản đã được làm sạch và chuẩn hóa, chương trình loại bỏ các bình luận có nội dung giống hệt nhau.
+    - Loại Bỏ Bình Luận Chỉ Có Một Từ
+
+lưu vào file cleaned_reviews.json
+
+
+3. cleaned_reviews.json được cắt ra thành 4 file nhỏ hơn để chat bot dễ phân tích,
+chat bot đọc và phân loại tự động thành 3 bộ: negative_reviews.json
+                                              neutral_reviews.json
+                                              positive_reviews.json
+
+
+4. Chạy augment_data.py để tăng cường dữ liệu bằng cách dịch bình luận: tiếng Việt -> tiếng Anh -> tiếng Việt
+
+
+==> Sau khi tăng cường và kiểm tra lại thì đây là các file dùng để huấn luyện mô hình: final_negative_reviews.json
+                                              					       final_neutral_reviews.json
+                                              					       final_positive_reviews.json
+

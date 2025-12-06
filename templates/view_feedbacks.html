@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Danh sách ý kiến đóng góp</title>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/static/styles_shared.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/logo.png" alt="Logo" class="logo">
+            <h1>Ý kiến Đóng góp</h1>
+        </div>
+        <div class="header-actions">
+            <a href="/predict" class="header-btn"><i class="fas fa-arrow-left"></i> Quay về</a>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-comments"></i> Danh sách các ý kiến</h2>
+            </div>
+            <div class="card-body">
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">ID</th>
+                            <th style="width: 200px;">Tên</th>
+                            <th>Nội dung</th>
+                            <th style="width: 200px;">Ngày gửi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feedback in feedbacks %}
+                        <tr>
+                            <td>{{ feedback.id }}</td>
+                            <td>{{ feedback.name }}</td>
+                            <td>{{ feedback.feedback }}</td>
+                            <td>{{ feedback.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

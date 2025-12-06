@@ -1,0 +1,603 @@
+/* --- CÀI ĐẶT CHUNG --- */
+:root {
+    --primary-color: #004C99;
+    --secondary-color: #1674E6;
+    --background-color: #f0f2f5;
+    --card-bg-color: #ffffff;
+    --text-color: #333;
+    --text-light-color: #666;
+    --border-color: #e0e0e0;
+    --positive-color: #28a745;
+    --neutral-color: #ffc107;
+    --negative-color: #dc3545;
+    --shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: var(--background-color);
+    margin: 0;
+    color: var(--text-color);
+}
+
+/* --- HEADER --- */
+header {
+    background-color: var(--card-bg-color);
+    color: var(--text-color);
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    max-height: 50px;
+    margin-right: 20px;
+}
+
+header h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+/* --- CỤM NÚT HEADER --- */
+.header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.header-actions .header-btn {
+    text-decoration: none;
+    color: var(--secondary-color);
+    background-color: #e8f0fe;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-actions .header-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.header-actions .header-btn i {
+    margin-right: 8px;
+}
+
+.header-actions .btn-logout {
+    background-color: #fdecea;
+    color: var(--negative-color);
+}
+
+.header-actions .btn-logout:hover {
+    background-color: var(--negative-color);
+    color: white;
+}
+
+
+/* --- BỐ CỤC CHÍNH --- */
+.main-container {
+    display: flex;
+    padding: 20px;
+    gap: 20px;
+}
+
+.sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.content {
+    flex-grow: 1;
+    min-width: 0; 
+}
+
+/* --- THẺ (CARD) --- */
+.card {
+    background: var(--card-bg-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box; 
+}
+
+.card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; 
+}
+
+.card-header h2, .card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+.card p {
+    color: var(--text-light-color);
+    line-height: 1.6;
+}
+
+/* --- CÁC THÀNH PHẦN FORM --- */
+textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    resize: vertical;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+button, .cta-button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--secondary-color);
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+button:hover, .cta-button:hover {
+    background-color: var(--primary-color);
+}
+
+.cta-button {
+    background-color: var(--positive-color);
+}
+
+.cta-button:hover {
+    background-color: #218838;
+}
+
+/* --- KẾT QUẢ PHÂN TÍCH NHANH --- */
+.quick-analysis-result {
+    margin-top: 15px; 
+}
+.quick-analysis-result .quick-review {
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: center;
+    border: 1px solid transparent;
+}
+.sentiment-positive { background-color: #e9f7ec; color: var(--positive-color); border-color: var(--positive-color);}
+.sentiment-neutral { background-color: #fff8e1; color: var(--neutral-color); border-color: var(--neutral-color); }
+.sentiment-negative { background-color: #fdecea; color: var(--negative-color); border-color: var(--negative-color); }
+.loading-text { color: var(--text-light-color); }
+
+
+/* --- KẾT QUẢ PHÂN TÍCH MXH --- */
+.summary-card {
+    margin-bottom: 20px;
+}
+
+.summary-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    text-align: center;
+    margin: 10px;
+}
+
+.stat-item h4 {
+    margin: 0 0 5px 0;
+    color: var(--text-light-color);
+    font-size: 14px;
+}
+
+.stat-item p {
+    margin: 0;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.sentiment-badge {
+    color: var(--positive-color);
+}
+
+/* --- LƯỚI BIỂU ĐỒ --- */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.charts-grid .card {
+    min-width: 0;
+}
+
+.chart-card.full-width {
+    grid-column: 1 / -1;
+    margin-bottom: 20px;
+}
+
+.chart-card img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.pie-chart-wrapper {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    min-width: 0;
+    padding: 55px 20px 20px 20px; 
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pie-chart-wrapper canvas {
+    max-height: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+/* --- PHẦN WORD CLOUD --- */
+.wordcloud-container {
+    display: flex;
+    justify-content: space-between; 
+    text-align: center;
+    gap: 15px;
+    flex-wrap: nowrap; 
+    overflow-x: auto; 
+}
+
+.wordcloud-item {
+    flex: 1; 
+    width: 33%; 
+    min-width: 0; 
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wordcloud-item h4 {
+    margin-top: 0;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.wordcloud-item img {
+    width: 100%; 
+    height: auto; 
+    max-width: 100%;
+}
+
+/* --- BIỂU ĐỒ N-GRAMS --- */
+.ngram-stacked-item {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.ngram-stacked-item:last-child {
+    margin-bottom: 5px;
+}
+
+/* --- CHI TIẾT BÌNH LUẬN --- */
+.reviews-card .card-header {
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.filter-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.filter-button {
+    background-color: #f0f2f5;
+    color: var(--text-color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid #dcdfe3;
+    font-size: 13px;
+    transition: all 0.3s;
+    width: auto !important; 
+    min-width: unset;      
+    display: inline-flex;  
+    align-items: center;
+    justify-content: center;
+}
+
+.filter-button:hover {
+    background-color: #dcdfe3;
+}
+
+.filter-button.active {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+#reviews-list {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.review-item {
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    color: var(--text-light-color);
+    font-size: 14px;
+}
+
+.review-author, .review-time { display: flex; align-items: center; gap: 5px; }
+
+.review-body p { margin: 0 0 10px 0; line-height: 1.5; color: var(--text-color); }
+
+.review-footer .sentiment-type {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.sentiment-type.positive { background-color: #e9f7ec; color: var(--positive-color); }
+.sentiment-type.neutral { background-color: #fff8e1; color: var(--neutral-color); }
+.sentiment-type.negative { background-color: #fdecea; color: var(--negative-color); }
+
+.no-reviews {
+    text-align: center;
+    color: var(--text-light-color);
+    padding: 20px;
+}
+
+
+/* --- TRẠNG THÁI RỖNG VÀ LỖI --- */
+.empty-state, .error-card {
+    text-align: center;
+    padding: 50px;
+}
+.empty-state i, .error-card i {
+    font-size: 50px;
+    color: #ccc;
+    margin-bottom: 20px;
+}
+.error-card i { color: var(--negative-color); }
+
+/* --- GỢI Ý CẢI THIỆN & ĐIỂM CẦN PHÁT HUY --- */
+.suggestions-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.suggestion-item {
+    border-bottom: 1px solid var(--border-color);
+    padding: 15px 0;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.suggestion-topic {
+    font-weight: bold;
+}
+
+.suggestion-count {
+    background-color: #fdecea;
+    color: var(--negative-color);
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.suggestion-count.strength-count {
+    background-color: #e9f7ec;
+    color: var(--positive-color);
+}
+
+.suggestion-examples {
+    display: none;
+    margin-top: 15px;
+    padding-left: 20px;
+    background-color: #f8f9fa;
+    border-left: 3px solid var(--negative-color);
+    padding: 10px 15px;
+}
+
+.suggestion-examples p {
+    margin-top: 0;
+    color: var(--text-color);
+}
+
+.suggestion-examples ul {
+    padding-left: 20px;
+    margin: 0;
+}
+
+.suggestion-examples li {
+    font-style: italic;
+    color: var(--text-light-color);
+    margin-bottom: 5px;
+}
+
+/* --- HIỆU ỨNG TẢI TRANG --- */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(5px);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.loading-spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--secondary-color);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 1200px) {
+    .main-container {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        flex-direction: row;
+        gap: 20px;
+    }
+    .sidebar .card {
+        flex: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        flex-direction: column;
+        gap: 15px;
+        padding: 15px;
+    }
+    
+    .header-actions {
+        justify-content: center;
+    }
+
+    .sidebar {
+        flex-direction: column;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .wordcloud-container {
+        flex-wrap: wrap; 
+    }
+    .wordcloud-item {
+        width: 100%;
+        max-width: 100%;
+        flex: none;
+    } 
+
+    .header-actions .btn-logout .logout-text {
+        display: none;
+    }
+
+    .header-actions .btn-logout {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        border-radius: 50%;
+    }
+
+    .header-actions .btn-logout i {
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .filter-controls {
+        width: 100%;
+        justify-content: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filter-button {
+        width: 100% !important;
+        text-align: center;
+    }
+}

@@ -1,0 +1,71 @@
+{
+  "Cơ sở vật chất": [
+    "cơ sở vật chất", "phòng học", "máy lạnh", "điều hòa", "nhà vệ sinh", "wc", "bàn ghế", "vệ sinh", "sạch sẽ",
+    "thiết bị", "thực hành", "phòng máy", "thư viện", "sân", "nóng", "chật", "cũ", "hư", "hỏng", "xuống cấp",
+    "wifi", "sóng điện thoại", "thang máy", "máy chiếu", "phòng thí nghiệm", "xưởng thực hành", "phòng lab",
+    "sân thể thao", "nhà thi đấu", "không gian", "giảng đường", "âm thanh", "ánh sáng", "ổ cắm điện", "cây xanh",
+    "ghế đá", "máy bán nước tự động", "chật chội", "mái che", "dơ", "bẩn", "kẹt", "quá tải", "ngập", "tối",
+    "hôi", "mờ", "gỉ sét", "không đủ", "mạng yếu", "lỗi thời"
+  ],
+  "Học phí & Chi phí": [
+    "học phí", "tiền học", "tăng học phí", "chi phí", "đắt", "thu phí", "phụ thu", "học bổng",
+    "lệ phí", "phí giữ xe", "tiền giữ xe", "phí tài liệu", "tiền tài liệu", "phí đồng phục", "tiền đồng phục",
+    "hỗ trợ tài chính", "vay vốn sinh viên", "chính sách học phí", "miễn giảm", "phí tốt nghiệp",
+    "phí bảo hiểm y tế", "tiền bảo hiểm y tế", "tiền", "giá", "phát sinh", "thu thêm", "tốn kém", "mắc"
+  ],
+  "Giảng viên & Đào tạo": [
+    "giảng viên", "thầy cô", "chương trình", "đào tạo", "giáo trình", "chất lượng dạy",
+    "kiến thức", "không nhiệt tình", "phương pháp giảng dạy", "truyền đạt", "tương tác",
+    "hỗ trợ sinh viên", "chuyên môn", "kinh nghiệm thực tế", "lịch học", "thi cử",
+    "đánh giá", "đổi mới", "thực tế", "lý thuyết", "chấm bài", "phản hồi", "cập nhật",
+    "kỹ năng", "chuẩn đầu ra", "tín chỉ", "đăng ký học phần", "nhàm chán",
+    "bảo thủ", "trù dập", "thiên vị", "khó hiểu", "buồn ngủ", "lạc hậu", "nặng lý thuyết",
+    "không thực tế", "khô khan", "áp đặt", "đánh đố", "không công bằng", "thiếu tâm huyết", "trễ giờ"
+  ],
+  "Bãi giữ xe": [
+    "bãi giữ xe", "gửi xe", "nhà xe", "giữ xe",
+    "hầm xe", "nhân viên giữ xe", "thẻ xe", "mất xe", "lối vào", "lối ra",
+    "hết chỗ", "kẹt xe", "chật hẹp", "lộn xộn", "nguy hiểm", "thái độ"
+  ],
+  "Hỗ trợ & Dịch vụ Sinh viên": [
+    "phòng đào tạo", "công tác sinh viên", "hỗ trợ", "thủ tục", "giấy tờ", "chậm", "khó khăn",
+    "thái độ", "nhiệt tình", "nhanh chóng", "quy trình", "hướng dẫn", "tư vấn", "cố vấn học tập",
+    "văn phòng khoa", "email", "thông báo", "website", "ứng dụng sinh viên", "app", "tư vấn tâm lý",
+    "vô trách nhiệm", "đùn đẩy", "quan liêu", "máy móc", "phiền hà", "không trả lời", "khó gặp"
+  ],
+  "Canteen & Ăn uống": [
+    "canteen", "căn tin", "đồ ăn", "thực đơn", "món ăn",
+    "an toàn thực phẩm", "vệ sinh an toàn thực phẩm", "phục vụ",
+    "dở", "nguội", "không hợp vệ sinh", "ngộ độc"
+  ],
+  "Hoạt động ngoại khóa & Câu lạc bộ": [
+    "hoạt động ngoại khóa", "câu lạc bộ", "clb", "sự kiện", "chương trình", "đoàn hội",
+    "phong trào", "tình nguyện", "kỹ năng mềm", "teambuilding", "cuộc thi", "hội thảo",
+    "giao lưu văn nghệ", "thể thao", "ít hoạt động"
+  ],
+  "Cơ hội việc làm & Thực tập": [
+    "cơ hội việc làm", "thực tập", "ngày hội việc làm", "hỗ trợ việc làm", "liên kết doanh nghiệp",
+    "đầu ra", "kinh nghiệm", "nhà tuyển dụng", "CV", "phỏng vấn", "hướng nghiệp", "kết nối",
+    "cựu sinh viên", "khó tìm", "không hỗ trợ", "thiếu liên kết", "chất lượng thấp"
+  ],
+  "Môi trường học tập & Văn hóa": [
+    "môi trường học tập", "văn hóa", "năng động", "sáng tạo", "áp lực", "cạnh tranh",
+    "bạn bè", "giao lưu", "hòa đồng", "tôn trọng", "gian lận thi cử", "ý thức", "quy định đồng phục",
+    "toxic", "tiêu cực", "chia rẽ", "thiếu trung thực", "bạo lực học đường", "chạy theo thành tích"
+  ],
+  "Thư viện & Nguồn tài liệu": [
+    "thư viện", "sách", "giáo trình", "tài liệu", "nguồn học liệu", "cơ sở dữ liệu", "không gian học tập",
+    "yên tĩnh", "máy tính", "tài liệu trực tuyến", "e-book", "tạp chí khoa học", "thủ thư", "giờ mở cửa",
+    "ồn ào", "ồn", "thiếu sách", "thiếu tài liệu", "khó mượn", "hết chỗ"
+  ],
+  "Ký túc xá & Chỗ ở": [
+    "ký túc xá", "ktx", "chỗ ở", "phòng ở", "điện nước", "tiện nghi",
+    "nội quy", "giá phòng", "bạn cùng phòng", "giờ giới nghiêm", "sinh hoạt chung",
+    "chật chội", "xuống cấp", "mất nước", "cúp điện", "an ninh kém", "nội quy khắt khe"
+  ],
+  "An ninh & Trật tự": [
+    "an ninh", "bảo vệ", "trật tự", "an toàn", "mất cắp", "trộm cắp", "quản lý ra vào",
+    "camera an ninh", "cháy nổ", "lừa đảo", "gây gổ", "lỏng lẻo", "thiếu chuyên nghiệp", 
+    "không an toàn", "phức tạp"
+  ]
+}

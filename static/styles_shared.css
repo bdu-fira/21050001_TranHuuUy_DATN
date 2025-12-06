@@ -1,0 +1,172 @@
+/* --- CÀI ĐẶT CHUNG & BIẾN MÀU --- */
+:root {
+    --primary-color: #004C99;
+    --secondary-color: #1674E6;
+    --background-color: #f0f2f5;
+    --card-bg-color: #ffffff;
+    --text-color: #333;
+    --text-light-color: #666;
+    --border-color: #e0e0e0;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background-color: var(--background-color);
+    margin: 0;
+    color: var(--text-color);
+}
+
+/* --- ** HEADER ** --- */
+header {
+    background-color: var(--card-bg-color);
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    max-height: 50px;
+    margin-right: 20px;
+}
+
+header h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+/* ** CSS CHO CÁC NÚT TRÊN HEADER ** */
+.header-actions .header-btn {
+    text-decoration: none;
+    color: var(--secondary-color);
+    background-color: #e8f0fe;
+    padding: 8px 15px;
+    border-radius: 20px;
+    margin-left: 15px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.header-actions .header-btn:hover {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.header-actions .header-btn i {
+    margin-right: 8px;
+}
+
+
+/* --- BỐ CỤC CHÍNH --- */
+.main-container {
+    padding: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* --- THẺ (CARD) --- */
+.card {
+    background: var(--card-bg-color);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-body {
+    padding: 20px;
+}
+
+/* --- BẢNG (TABLE) --- */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.styled-table thead tr {
+    background-color: #f8f9fa;
+    color: var(--text-color);
+    text-align: left;
+}
+
+.styled-table th,
+.styled-table td {
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.styled-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.styled-table tbody tr:last-of-type {
+    border-bottom: none;
+}
+
+.styled-table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* --- NÚT BẤM (BUTTONS) --- */
+.btn {
+    text-decoration: none;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-success {
+    background-color: var(--success-color);
+    color: white;
+}
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-danger {
+    background-color: var(--danger-color);
+    color: white;
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+}
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}

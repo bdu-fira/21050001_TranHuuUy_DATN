@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Công cụ phân tích mạng xã hội</title>
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="stylesheet" type="text/css" href="/static/styles2.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/logo.png" alt="Logo" class="logo">
+            <h1>Bảng điều khiển Phân tích Cảm xúc</h1>
+        </div>
+        <div class="header-actions">
+            <a href="/view_feedbacks" class="header-btn"><i class="fas fa-comments"></i> Xem góp ý</a>
+            <a href="/analysis_history" class="header-btn"><i class="fas fa-history"></i> Lịch sử phân tích</a>
+            <a href="/logout" class="header-btn btn-logout" title="Đăng xuất">
+                <i class="fas fa-power-off"></i>
+                <span class="logout-text">Đăng xuất</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- Cột bên trái - Công cụ và Phân tích nhanh -->
+        <div class="sidebar">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-search"></i> Phân tích Mạng xã hội</h2>
+                </div>
+                <div class="card-body">
+                    <p>Chạy phân tích mới về các bình luận của trường Đại Học Bình Dương từ mạng xã hội.</p>
+                    <form id="reviews-form">
+                        <button type="submit" class="cta-button">Bắt đầu Phân tích</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-pen-alt"></i> Phân tích nhanh Văn bản</h2>
+                </div>
+                <div class="card-body">
+                    <form id="predict-form">
+                        <textarea name="text" rows="8" placeholder="Nhập văn bản cần phân tích ở đây..."></textarea>
+                        <button type="submit">Phân tích ngay</button>
+                    </form>
+                    <div id="result" class="quick-analysis-result"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Khu vực hiển thị kết quả chính -->
+        <div class="content">
+            <div id="reviews-result">
+                {% if latest_report %}
+                    <!-- Đánh giá tổng quan -->
+                    <div class="card summary-card">
+                        <div class="card-header">
+                            <h2 id="summary-title" data-timestamp="{{ latest_report.created_at }}">
+                                <i class="fas fa-chart-bar"></i> Đánh giá Tổng quan
+                            </h2>
+                        </div>
+                        <div class="summary-stats">
+                            <div class="stat-item">
+                                <h4>Trường</h4>
+                                <p>Đại học Bình Dương</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Tổng bình luận</h4>
+                                <p>{{ latest_report.total_reviews }}</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Nhận xét chung</h4>
+                                <p class="sentiment-badge">{{ latest_report.avg_sentiment_type }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- === CARD PHÂN TÍCH CHỦ ĐỀ (GỘP) === -->
+                    {% if latest_report.strengths_to_promote or latest_report.improvement_suggestions %}
+                    <div class="card chart-card full-width">
+                        <div class="card-header">
+                            <h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Chê</h3>
+                        </div>
+                        <div class="card-body">
+                            <!-- Biểu đồ cột so sánh -->
+                            <div class="chart-container" id="topic-chart-container" style="margin-bottom: 30px; display: none; height: 300px;">
+                                <canvas id="topicComparisonChart"></canvas>
+                            </div>
+                    
+                            <!-- Điểm cần phát huy -->
+                            {% if latest_report.strengths_to_promote %}
+                            <div class="topic-section">
+                                <h4 style="font-size: 18px; margin-bottom: 15px; color: var(--positive-color);"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4>
+                                <ul class="suggestions-list">
+                                    {% for topic, data in latest_report.strengths_to_promote.items()|sort(attribute='1.count', reverse=True) %}
+                                    {% if data.count >= 2 %}
+                                    <li class="suggestion-item">
+                                        <div class="suggestion-header">
+                                            <span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span>
+                                            <span class="suggestion-count strength-count">{{ data.count }} lượt khen</span>
+                                        </div>
+                                        <div class="suggestion-examples" style="display: none;">
+                                            <p><strong>Một số ví dụ:</strong></p>
+                                            <ul>
+                                                {% for ex in data.examples %}
+                                                <li>"{{ ex }}"</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                    
+                            <!-- Gợi ý Cải thiện -->
+                            {% if latest_report.improvement_suggestions %}
+                             <div class="topic-section" style="margin-top: 30px;">
+                                <h4 style="font-size: 18px; margin-bottom: 15px; color: var(--negative-color);"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4>
+                                <ul class="suggestions-list">
+                                    {% for topic, data in latest_report.improvement_suggestions.items()|sort(attribute='1.count', reverse=True) %}
+                                    {% if data.count >= 3 %}
+                                    <li class="suggestion-item">
+                                        <div class="suggestion-header">
+                                            <span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span>
+                                            <span class="suggestion-count">{{ data.count }} phàn nàn</span>
+                                        </div>
+                                        <div class="suggestion-examples" style="display: none;">
+                                            <p><strong>Một số ví dụ:</strong></p>
+                                            <ul>
+                                                {% for ex in data.examples %}
+                                                <li>"{{ ex }}"</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    </li>
+                                    {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Khu vực biểu đồ -->
+                    <div class="charts-grid">
+                        <!-- Biểu đồ tròn (ĐÃ SỬA: class pie-chart-wrapper) -->
+                        <div class="card chart-card">
+                            <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Tỷ lệ Cảm xúc</h3></div>
+                            <div class="card-body chart-container pie-chart-wrapper">
+                                <canvas id="sentimentPieChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Biểu đồ Venn -->
+                        <div class="card chart-card">
+                            <div class="card-header"><h3><i class="fas fa-circle-notch"></i> Biểu đồ Venn</h3></div>
+                            <div class="card-body">
+                                <img src="data:image/png;base64,{{ latest_report.venn_diagram }}" alt="Biểu đồ Venn">
+                            </div>
+                        </div>
+                        
+                        <!-- Word Cloud -->
+                        <div class="card chart-card full-width">
+                            <div class="card-header"><h3><i class="fas fa-cloud"></i> Word Cloud</h3></div>
+                            <div class="card-body wordcloud-container">
+                                <div class="wordcloud-item">
+                                    <h4>Tích cực</h4>
+                                    <img src="data:image/png;base64,{{ latest_report.positive_wordcloud }}" alt="Word Cloud Tích cực">
+                                </div>
+                                <div class="wordcloud-item">
+                                    <h4>Trung tính</h4>
+                                    <img src="data:image/png;base64,{{ latest_report.neutral_wordcloud }}" alt="Word Cloud Trung tính">
+                                </div>
+                                <div class="wordcloud-item">
+                                    <h4>Tiêu cực</h4>
+                                    <img src="data:image/png;base64,{{ latest_report.negative_wordcloud }}" alt="Word Cloud Tiêu cực">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Phân tích N-grams -->
+                        <div class="card chart-card full-width">
+                            <div class="card-header">
+                                <h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="ngram-stacked-item">
+                                    <img src="data:image/png;base64,{{ latest_report.positive_bigram_chart }}" alt="Bigram Tích cực">
+                                </div>
+                                <div class="ngram-stacked-item">
+                                    <img src="data:image/png;base64,{{ latest_report.neutral_bigram_chart }}" alt="Bigram Trung tính">
+                                </div>
+                                <div class="ngram-stacked-item">
+                                    <img src="data:image/png;base64,{{ latest_report.negative_bigram_chart }}" alt="Bigram Tiêu cực">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                <!-- DEBUG GIAO DIỆN Chi tiết Bình luận -->
+                <!-- <div class="card reviews-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-list-ul"></i> Chi tiết Bình luận (Dữ liệu mẫu)</h3>
+                        <div class="filter-controls">
+                            <button class="filter-button active" data-filter="all">Tất cả</button>
+                            <button class="filter-button" data-filter="Tích cực">Tích cực</button>
+                            <button class="filter-button" data-filter="Trung tính">Trung tính</button>
+                            <button class="filter-button" data-filter="Tiêu cực">Tiêu cực</button>
+                        </div>
+                    </div>
+                    <div id="reviews-list-debug" class="card-body"> -->
+                        <!-- Mẫu bình luận Tích cực -->
+                        <!-- <div class="review-item">
+                            <div class="review-header">
+                                <span class="review-author"><i class="fas fa-user"></i> Nguyễn Văn A</span>
+                                <span class="review-time"><i class="fas fa-clock"></i> 10:30 - 25/11/2023</span>
+                            </div>
+                            <div class="review-body">
+                                <p>Trường này cơ sở vật chất rất tốt, giảng viên nhiệt tình. Mình rất thích môi trường ở đây.</p>
+                            </div>
+                            <div class="review-footer">
+                                <span class="sentiment-type positive">Tích cực</span>
+                            </div>
+                        </div> -->
+
+                        <!-- Mẫu bình luận Tiêu cực -->
+                        <!-- <div class="review-item">
+                            <div class="review-header">
+                                <span class="review-author"><i class="fas fa-user"></i> Trần Thị B</span>
+                                <span class="review-time"><i class="fas fa-clock"></i> 09:15 - 24/11/2023</span>
+                            </div>
+                            <div class="review-body">
+                                <p>Thủ tục hành chính còn rườm rà, đợi chờ lâu quá. Cần cải thiện quy trình nộp học phí.</p>
+                            </div>
+                            <div class="review-footer">
+                                <span class="sentiment-type negative">Tiêu cực</span>
+                            </div>
+                        </div> -->
+
+                        <!-- Mẫu bình luận Trung tính -->
+                        <!-- <div class="review-item">
+                            <div class="review-header">
+                                <span class="review-author"><i class="fas fa-user"></i> Lê Văn C</span>
+                                <span class="review-time"><i class="fas fa-clock"></i> 08:00 - 23/11/2023</span>
+                            </div>
+                            <div class="review-body">
+                                <p>Hôm nay trường có tổ chức sự kiện gì không mọi người?</p>
+                            </div>
+                            <div class="review-footer">
+                                <span class="sentiment-type neutral">Trung tính</span>
+                            </div>
+                        </div>
+                    </div>
+                </div> -->
+                <!-- HẾT ĐOẠN DEBUG -->
+            
+                {% else %}
+                <div class="card empty-state">
+                    <i class="fas fa-poll-h"></i>
+                    <h2>Chưa có dữ liệu phân tích</h2>
+                    <p>Hãy bắt đầu một phiên phân tích mới để xem kết quả tại đây.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading" style="display:none;">
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p>Đang xử lý, vui lòng chờ...</p>
+        </div>
+    </div>
+
+    <script>
+    // Cấu hình mặc định cho tất cả request jQuery để tự động kèm token
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", $('meta[name="csrf-token"]').attr('content'));
+            }
+        }
+    });
+
+    $(document).ready(function() {
+        // ** ĐỊNH DẠNG NGÀY GIỜ **
+        function formatDateTime(isoString) {
+            if (!isoString) return '';
+            const date = new Date(isoString);
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${hours}:${minutes} - ${day}/${month}/${year}`;
+        }
+
+        // ** ĐỊNH DẠNG LẠI THỜI GIAN KHI TẢI TRANG LẦN ĐẦU **
+        const summaryTitle = $('#summary-title');
+        if (summaryTitle.length) {
+            const timestamp = summaryTitle.data('timestamp');
+            const formattedTime = formatDateTime(timestamp);
+            summaryTitle.html(`<i class="fas fa-chart-bar"></i> Đánh giá Tổng quan (${formattedTime})`);
+        }
+        
+        // --- REUSABLE FUNCTION TO CREATE TOPIC COMPARISON CHART ---
+        function createTopicComparisonChart(strengthsData, suggestionsData, canvasId) {
+            if (!strengthsData || !suggestionsData) return;
+    
+            const suggestionTopics = Object.keys(suggestionsData);
+            const commonTopics = Object.keys(strengthsData).filter(topic => suggestionTopics.includes(topic));
+    
+            if (commonTopics.length > 0) {
+                const chartContainer = $(`#${canvasId}`).parent();
+                chartContainer.show();
+    
+                const labels = commonTopics;
+                const strengthCounts = commonTopics.map(topic => strengthsData[topic].count);
+                const suggestionCounts = commonTopics.map(topic => suggestionsData[topic].count);
+    
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Lượt khen',
+                                data: strengthCounts,
+                                backgroundColor: '#28a745',
+                                borderColor: '#218838',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Phàn nàn',
+                                data: suggestionCounts,
+                                backgroundColor: '#dc3545',
+                                borderColor: '#c82333',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Số lượng bình luận' } } },
+                        plugins: { legend: { position: 'top' }, title: { display: true, text: 'So sánh Tần suất Chủ đề Khen và Chê' } }
+                    }
+                });
+            }
+        }
+
+        // --- HIỂN THỊ KẾT QUẢ PHÂN TÍCH GẦN NHẤT KHI TẢI TRANG ---
+        {% if latest_report %}
+            var ctx = document.getElementById('sentimentPieChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Tích cực', 'Trung tính', 'Tiêu cực'],
+                    datasets: [{
+                        data: [ {{ latest_report.positive_count }}, {{ latest_report.neutral_count }}, {{ latest_report.negative_count }} ],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderColor: '#fff',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+            
+            // Call chart function for the initial report
+            const initialStrengths = {{ latest_report.strengths_to_promote | tojson | safe }};
+            const initialSuggestions = {{ latest_report.improvement_suggestions | tojson | safe }};
+            createTopicComparisonChart(initialStrengths, initialSuggestions, 'topicComparisonChart');
+        {% endif %}
+
+        // Xử lý form "Phân tích nhanh văn bản"
+        $('#predict-form').submit(function(e) {
+            e.preventDefault();
+            var resultDiv = $('#result');
+            resultDiv.html('<p class="loading-text">Đang phân tích...</p>');
+            $.ajax({ type: 'POST', url: '/predict', data: $(this).serialize(),
+                success: function(response) {
+                    let sentimentClass = '';
+                    if (response.sentiment_type === 'Tích cực') sentimentClass = 'sentiment-positive';
+                    else if (response.sentiment_type === 'Tiêu cực') sentimentClass = 'sentiment-negative';
+                    else sentimentClass = 'sentiment-neutral';
+                    resultDiv.html( `<div class="quick-review ${sentimentClass}">` + '<strong>Kết quả:</strong> ' + response.sentiment_type + '</div>');
+                },
+                error: function() { resultDiv.html('<div class="error">Có lỗi xảy ra. Vui lòng thử lại.</div>'); }
+            });
+        });
+        
+        // Xử lý form "Phân tích cảm xúc từ mạng xã hội"
+        let originalReviews = [];
+        
+        $('#reviews-form').submit(function(e) {
+            e.preventDefault();
+            $('#loading').show();
+            $('#reviews-result').empty();
+
+            $.ajax({
+                type: 'POST', url: '/get_reviews', data: $(this).serialize(),
+                success: function(response) {
+                    let topicAnalysisHtml = '';
+                    const strengths = response.strengths_to_promote;
+                    const suggestions = response.improvement_suggestions;
+                    
+                    if ((strengths && Object.keys(strengths).length > 0) || (suggestions && Object.keys(suggestions).length > 0)) {
+                        topicAnalysisHtml += `
+                        <div class="card chart-card full-width">
+                            <div class="card-header"><h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Chê</h3></div>
+                            <div class="card-body">
+                                <div class="chart-container" id="ajax-topic-chart-container" style="margin-bottom: 30px; display: none; height: 300px;">
+                                    <canvas id="ajaxTopicComparisonChart"></canvas>
+                                </div>`;
+                        
+                        if (strengths && Object.keys(strengths).length > 0) {
+                            const sortedStrengths = Object.entries(strengths).filter(([, data]) => data.count >= 2).sort(([, a], [, b]) => b.count - a.count);
+                            if (sortedStrengths.length > 0) {
+                                topicAnalysisHtml += `<div class="topic-section"><h4 style="font-size: 18px; margin-bottom: 15px; color: var(--positive-color);"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4><ul class="suggestions-list">`;
+                                sortedStrengths.forEach(([topic, data]) => {
+                                    let examplesHtml = data.examples.map(ex => `<li>"${ex}"</li>`).join('');
+                                    topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count strength-count">${data.count} lượt khen</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Một số ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
+                                });
+                                topicAnalysisHtml += '</ul></div>';
+                            }
+                        }
+    
+                        if (suggestions && Object.keys(suggestions).length > 0) {
+                            const sortedSuggestions = Object.entries(suggestions).filter(([, data]) => data.count >= 3).sort(([, a], [, b]) => b.count - a.count);
+                            if (sortedSuggestions.length > 0) {
+                                topicAnalysisHtml += `<div class="topic-section" style="margin-top: 30px;"><h4 style="font-size: 18px; margin-bottom: 15px; color: var(--negative-color);"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4><ul class="suggestions-list">`;
+                                sortedSuggestions.forEach(([topic, data]) => {
+                                    let examplesHtml = data.examples.map(ex => `<li>"${ex}"</li>`).join('');
+                                    topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count">${data.count} phàn nàn</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Một số ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
+                                });
+                                topicAnalysisHtml += '</ul></div>';
+                            }
+                        }
+                        topicAnalysisHtml += '</div></div>';
+                    }
+
+                    let reviewsHtml = `
+                        <div class="card summary-card">
+                            <div class="card-header">
+                                <h2><i class="fas fa-chart-bar"></i> Đánh giá Tổng quan</h2>
+                            </div>
+                            <div class="summary-stats">
+                                <div class="stat-item"><h4>Trường</h4><p>Đại học Bình Dương</p></div>
+                                <div class="stat-item"><h4>Tổng bình luận</h4><p>${response.total_reviews}</p></div>
+                                <div class="stat-item"><h4>Nhận xét chung</h4><p class="sentiment-badge">${response.avg_sentiment_type}</p></div>
+                            </div>
+                        </div>
+
+                        ${topicAnalysisHtml}
+                        
+                        <div class="charts-grid">
+                            <div class="card chart-card"><div class="card-header"><h3><i class="fas fa-chart-pie"></i> Tỷ lệ Cảm xúc</h3></div><div class="card-body chart-container pie-chart-wrapper"><canvas id="sentimentPieChart"></canvas></div></div>
+                            <div class="card chart-card"><div class="card-header"><h3><i class="fas fa-circle-notch"></i> Biểu đồ Venn</h3></div><div class="card-body"><img src="data:image/png;base64,${response.venn_diagram}" alt="Biểu đồ Venn"></div></div>
+                            <div class="card chart-card full-width"><div class="card-header"><h3><i class="fas fa-cloud"></i> Word Cloud</h3></div><div class="card-body wordcloud-container"><div class="wordcloud-item"><h4>Tích cực</h4><img src="data:image/png;base64,${response.positive_wordcloud}" alt="Word Cloud Tích cực"></div><div class="wordcloud-item"><h4>Trung tính</h4><img src="data:image/png;base64,${response.neutral_wordcloud}" alt="Word Cloud Trung tính"></div><div class="wordcloud-item"><h4>Tiêu cực</h4><img src="data:image/png;base64,${response.negative_wordcloud}" alt="Word Cloud Tiêu cực"></div></div></div>
+                            <div class="card chart-card full-width">
+                                <div class="card-header"><h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3></div>
+                                <div class="card-body">
+                                    <div class="ngram-stacked-item"><img src="data:image/png;base64,${response.positive_bigram_chart}" alt="Bigram Tích cực"></div>
+                                    <div class="ngram-stacked-item"><img src="data:image/png;base64,${response.neutral_bigram_chart}" alt="Bigram Trung tính"></div>
+                                    <div class="ngram-stacked-item"><img src="data:image/png;base64,${response.negative_bigram_chart}" alt="Bigram Tiêu cực"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card reviews-card">
+                            <div class="card-header"><h3><i class="fas fa-list-ul"></i> Chi tiết Bình luận</h3><div class="filter-controls"><button class="filter-button active" data-filter="all">Tất cả</button><button class="filter-button" data-filter="Tích cực">Tích cực</button><button class="filter-button" data-filter="Trung tính">Trung tính</button><button class="filter-button" data-filter="Tiêu cực">Tiêu cực</button></div></div>
+                            <div id="reviews-list" class="card-body"></div>
+                        </div>`;
+
+                    originalReviews = response.reviews;
+                    $('#reviews-result').html(reviewsHtml);
+                    displayReviews(originalReviews);
+                    
+                    var ctx = document.getElementById('sentimentPieChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Tích cực', 'Trung tính', 'Tiêu cực'],
+                            datasets: [{
+                                data: [response.positive_count, response.neutral_count, response.negative_count],
+                                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                                borderColor: '#fff',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom' } }
+                        }
+                    });
+
+                    createTopicComparisonChart(response.strengths_to_promote, response.improvement_suggestions, 'ajaxTopicComparisonChart');
+
+                    $('.filter-button').click(function() { $('.filter-button').removeClass('active'); $(this).addClass('active'); const selectedSentiment = $(this).data('filter'); if (selectedSentiment === 'all') { displayReviews(originalReviews); } else { const filteredReviews = originalReviews.filter(review => review.sentiment_type === selectedSentiment); displayReviews(filteredReviews); } });
+                },
+                error: function() { $('#reviews-result').html('<div class="card error-card"><i class="fas fa-exclamation-triangle"></i><h2>Lỗi</h2><p>Có lỗi xảy ra khi lấy bình luận. Vui lòng thử lại.</p></div>'); },
+                complete: function() { $('#loading').hide(); }
+            });
+        });
+
+        function displayReviews(reviews) { let reviewsHtml = ''; if (reviews.length === 0) { reviewsHtml = '<p class="no-reviews">Không có bình luận nào phù hợp.</p>'; } else { reviews.forEach(function(review) { let sentimentClass = ''; if (review.sentiment_type === 'Tích cực') sentimentClass = 'positive'; else if (review.sentiment_type === 'Tiêu cực') sentimentClass = 'negative'; else sentimentClass = 'neutral'; reviewsHtml += `<div class="review-item"><div class="review-header"><span class="review-author"><i class="fas fa-user"></i> ${review.author}</span><span class="review-time"><i class="fas fa-clock"></i> ${review.rtime}</span></div><div class="review-body"><p>${review.text}</p></div><div class="review-footer"><span class="sentiment-type ${sentimentClass}">${review.sentiment_type}</span></div></div>`; }); } $('#reviews-list').html(reviewsHtml); }
+
+        // --- EVENT DELEGATION CHO ACCORDION ---
+        $('#reviews-result').on('click', '.suggestion-header', function() {
+            $(this).siblings('.suggestion-examples').slideToggle('fast');
+        });
+
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+{
+  "Cơ sở vật chất": [
+    "cơ sở vật chất", "phòng học", "máy lạnh", "điều hòa", "nhà vệ sinh", "wc", "bàn ghế", "vệ sinh", "sạch sẽ",
+    "thiết bị", "thực hành", "phòng máy", "sân", "wifi", "sóng điện thoại", "thang máy", "máy chiếu", 
+    "phòng thí nghiệm", "xưởng thực hành", "phòng lab", "sân thể thao", "nhà thi đấu", "không gian", "giảng đường", 
+    "âm thanh", "ánh sáng", "ổ cắm điện", "cây xanh", "ghế đá", "máy bán nước tự động", "mái che",
+    "hiện đại", "rộng rãi", "thoáng mát", "khang trang", "đầy đủ", "ổn định", "mạnh"
+  ],
+  "Học phí & Chi phí": [
+    "học phí", "tiền học", "chi phí", "học bổng",
+    "lệ phí", "phí giữ xe", "tiền giữ xe", "phí tài liệu", "tiền tài liệu", "phí đồng phục", "tiền đồng phục",
+    "hỗ trợ tài chính", "vay vốn sinh viên", "chính sách học phí", "miễn giảm", "phí tốt nghiệp",
+    "phí bảo hiểm y tế", "tiền bảo hiểm y tế", "tiền", "giá",
+    "hợp lý", "phù hợp", "rẻ", "công khai", "minh bạch", "không phát sinh"
+  ],
+  "Giảng viên & Đào tạo": [
+    "giảng viên", "thầy cô", "chương trình", "đào tạo", "giáo trình", "chất lượng dạy",
+    "kiến thức", "phương pháp giảng dạy", "truyền đạt", "tương tác",
+    "hỗ trợ sinh viên", "chuyên môn", "kinh nghiệm thực tế", "lịch học", "thi cử",
+    "đánh giá", "đổi mới", "thực tế", "lý thuyết", "chấm bài", "phản hồi", "cập nhật",
+    "kỹ năng", "chuẩn đầu ra", "tín chỉ", "đăng ký học phần",
+    "tận tình", "nhiệt huyết", "giỏi", "dễ hiểu", "truyền cảm hứng", "công bằng", "thực tiễn", "vui vẻ", "thân thiện"
+  ],
+  "Bãi giữ xe": [
+    "bãi giữ xe", "gửi xe", "nhà xe", "giữ xe",
+    "hầm xe", "nhân viên giữ xe", "thẻ xe", "lối vào", "lối ra",
+    "rộng", "thoáng", "nhanh", "thuận tiện", "thông minh"
+  ],
+  "Hỗ trợ & Dịch vụ Sinh viên": [
+    "phòng đào tạo", "công tác sinh viên", "hỗ trợ", "thủ tục", "giấy tờ",
+    "thái độ", "nhiệt tình", "nhanh chóng", "quy trình", "hướng dẫn", "tư vấn", "cố vấn học tập",
+    "văn phòng khoa", "email", "thông báo", "website", "ứng dụng sinh viên", "app", "tư vấn tâm lý",
+    "hiệu quả", "chu đáo", "chuyên nghiệp", "kịp thời", "dễ dàng"
+  ],
+  "Canteen & Ăn uống": [
+    "canteen", "căn tin", "đồ ăn", "thực đơn", "món ăn",
+    "an toàn thực phẩm", "vệ sinh an toàn thực phẩm", "phục vụ", "ngon"
+  ],
+  "Hoạt động ngoại khóa & Câu lạc bộ": [
+    "hoạt động ngoại khóa", "câu lạc bộ", "clb", "sự kiện", "chương trình", "đoàn hội",
+    "phong trào", "tình nguyện", "kỹ năng mềm", "teambuilding", "cuộc thi", "hội thảo",
+    "giao lưu văn nghệ", "thể thao",
+    "sôi nổi", "thú vị", "bổ ích", "thường xuyên", "hoành tráng"
+  ],
+  "Cơ hội việc làm & Thực tập": [
+    "cơ hội việc làm", "thực tập", "ngày hội việc làm", "hỗ trợ việc làm", "liên kết doanh nghiệp",
+    "đầu ra", "kinh nghiệm", "nhà tuyển dụng", "CV", "phỏng vấn", "hướng nghiệp", "kết nối",
+    "cựu sinh viên", "nhiều cơ hội", "chất lượng cao", "lương cao", "đúng chuyên ngành", "doanh nghiệp lớn", "tỷ lệ có việc làm cao"
+  ],
+  "Môi trường học tập & Văn hóa": [
+    "môi trường học tập", "văn hóa", "năng động", "sáng tạo", "áp lực", "cạnh tranh",
+    "bạn bè", "giao lưu", "hòa đồng", "tôn trọng", "gian lận thi cử", "ý thức", "quy định đồng phục",
+    "đoàn kết", "cởi mở", "hỗ trợ lẫn nhau", "truyền thống tốt đẹp", "quốc tế", "tích cực"
+  ],
+  "Thư viện & Nguồn tài liệu": [
+    "thư viện", "sách", "giáo trình", "tài liệu", "nguồn học liệu", "cơ sở dữ liệu", "không gian học tập",
+    "yên tĩnh", "máy tính", "tài liệu trực tuyến", "e-book", "tạp chí khoa học", "thủ thư", "giờ mở cửa",
+    "nhiều sách", "mới", "dễ tìm", "miễn phí", "mở cửa muộn"
+  ],
+  "Ký túc xá & Chỗ ở": [
+    "ký túc xá", "ktx", "chỗ ở", "phòng ở", "điện nước", "tiện nghi",
+    "nội quy", "giá phòng", "bạn cùng phòng", "giờ giới nghiêm", "sinh hoạt chung",
+    "gọn gàng", "gần trường", "thoải mái", "vui"
+  ],
+  "An ninh & Trật tự": [
+    "an ninh", "bảo vệ", "trật tự", "an toàn", "mất cắp", "trộm cắp", "quản lý ra vào",
+    "camera an ninh", "tốt", "chặt chẽ", "nghiêm túc", "tin cậy", "yên tâm"
+  ]
+}

@@ -1,0 +1,548 @@
+body {
+    margin: 0;
+    height: 100vh;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+/* CSS cho header */
+.header {
+    background-color: #1676EB;
+    color: white;
+    padding: 10px 0;
+    position: relative;
+}
+
+.top-menu {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 10px;
+}
+
+.top-menu a {
+    color: yellow;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.top-menu a:hover {
+    text-decoration: underline;
+}
+
+.image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    height: 80px;
+    overflow: hidden;
+    position: relative;
+}
+
+.image-container img {
+    height: 100%;
+    width: auto;
+    object-fit: contain;
+}
+
+.image-container img:first-child {
+    max-width: 30%;
+}
+
+.image-container img:last-child {
+    max-width: 50%;
+}
+
+
+/* CSS main menu */
+.main-menu {
+    position: absolute;
+    bottom: -45px;
+    left: 0;
+    width: 100%;
+    background-color: #f0f0f0;
+    padding: 10px 0;
+    z-index: 10;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.main-menu a {
+    color: #333;
+    text-decoration: none;
+    margin: 0 10px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.main-menu a:hover {
+    color: #0066CC;
+}
+
+.menu-divider {
+    color: #999;
+    font-size: 14px;
+}
+
+/* CSS slider */
+.slider {
+    position: relative;
+    width: 100%;
+    height: 490px;
+    max-height: 490px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.slider-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+.slider-image.active {
+    opacity: 1;
+}
+
+@media screen and (max-width: 768px) {
+    .slider {
+        height: 300px;
+        max-height: 300px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .slider {
+        height: 200px;
+        max-height: 200px;
+    }
+}
+
+/* CSS cho quick buttons */
+.quick-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.quick-btn {
+    text-decoration: none;
+    color: white;
+    background-color: #1674E6;
+    padding: 15px 10px;
+    border-radius: 0;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+    text-align: center;
+    white-space: nowrap;
+    text-transform: uppercase;
+    font-weight: bold;
+    min-width: 180px;
+}
+
+.quick-btn:hover {
+    background-color: #004C99;
+}
+
+@media screen and (max-width: 768px) {
+    .quick-buttons {
+        gap: 10px;
+    }
+
+    .quick-btn {
+        padding: 12px 20px;
+        font-size: 14px;
+        min-width: 150px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .quick-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .quick-btn {
+        width: 90%;
+        margin: 5px 0;
+        min-width: 0;
+    }
+}
+
+/* CSS cho feedback form */
+.feedback-container-inline {
+    max-width: 600px;
+    margin: 20px auto;
+    margin-top: 70px;  /*dùng khi bỏ slider và quick button */
+    margin-bottom: 70px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-form-inline {
+    width: 100%;
+}
+
+.feedback-header-inline {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.feedback-header-inline h3 {
+    color: #333;
+    font-size: 24px;
+}
+
+.feedback-form-inline .form-group {
+    margin-bottom: 15px;
+    padding-right: 20px;
+}
+
+.feedback-form-inline label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.feedback-form-inline input{
+    width: calc(100% - 20px);
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 0 auto;
+}
+
+.feedback-form-inline textarea {
+    width: calc(100% - 20px);
+    width: 100%;
+    height: 150px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 0 auto;
+    resize: none;
+    overflow-y: auto;
+}
+
+.feedback-actions-inline {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10px;
+}
+
+.feedback-actions-inline button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.clear-btn {
+    background-color: red;
+    color: white;
+}
+
+.clear-btn:hover {
+    background-color: #ac1a1a;
+}
+
+.submit-btn {
+    background-color: #1674E6;
+    color: white;
+}
+
+.submit-btn:hover {
+    background-color: #004C99;
+}
+
+/* CSS cho footer */
+.footer {
+    background-color: #3b8dbd;
+    color: white;
+    padding: 20px 0;
+    font-size: 14px;
+    padding: 20px;
+    position: relative; 
+}
+.footer .container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-bottom: 25px;
+    padding: 0 20px;
+}
+.footer .column {
+    flex: 1;
+    min-width: 250px;
+    margin: 10px 0;
+    margin-left: 50px;
+}
+.footer .column h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.footer .column p, .footer .column a {
+    color: white;
+    text-decoration: none;
+    margin: 5px 0;
+}
+.footer .column a:hover {
+    text-decoration: underline;
+}
+.footer .column i {
+    margin-right: 10px;
+}
+.footer .column .title {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.footer .column .title i {
+    margin-right: 10px;
+}
+.footer .column .title span {
+    font-weight: bold;
+}
+.footer .column .section-title {
+    display: inline-block;
+    align-items: center;
+    background-color: #1676EB;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+.footer .column .section-title i {
+    margin-right: 10px;
+}
+.footer .column .section-title span {
+    font-weight: bold;
+}
+.footer .bottom-bar {
+    background-color: #1676EB;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+}
+.footer .bottom-bar a {
+    color: white;
+    text-decoration: none;
+}
+.footer .bottom-bar a:hover {
+    text-decoration: underline;
+}
+.footer .back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #0073e6;
+    color: white;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+.footer .back-to-top i {
+    font-size: 20px;
+}
+
+/* CSS cho form đăng nhập */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 350px;
+    max-height: 70vh;
+    overflow: hidden;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.modal-content form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-content .form-group {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.modal-content .login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #1676EB;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.modal-content .login-btn:hover {
+    background-color: #0056b3;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 70%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    font-size: 16px;
+}
+
+.password-container {
+    position: relative;
+    width: 100%;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: red;
+}
+
+/* --- CSS CHO NÚT ĐĂNG NHẬP PHÂN TÍCH MXH --- */
+.analysis-btn-top {
+    position: absolute;
+    top: 5px;
+    right: 20px;
+    background-color: #ffc107;
+    color: #004C99;
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    display: inline-flex;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+}
+
+.analysis-btn-top i {
+    margin-left: 8px;
+}
+
+.analysis-btn-top:hover {
+    background-color: #ffca2c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    color: #004C99;
+}
+
+/* === RESPONSIVE CHO HEADER VÀ NÚT PHÂN TÍCH === */
+@media screen and (max-width: 1100px) {
+    .analysis-btn-top {
+        padding: 8px 15px;
+        font-size: 13px;
+        top: 10px;
+        right: 15px;
+    }
+
+    .top-menu, .image-container {
+        margin-right: 180px;
+    }
+
+    .top-menu {
+        margin-top: 10px;
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .analysis-btn-top {
+        padding: 6px 10px;
+        font-size: 12px;
+        line-height: 1.2;
+    }
+    
+    .top-menu, .image-container {
+        margin-right: 150px; 
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .top-menu a {
+        font-size: 12px;
+    }
+    .top-menu {
+        gap: 10px;
+    }
+    .image-container {
+        height: 60px;
+        margin-right: 130px;
+    }
+}

@@ -1,0 +1,30 @@
+vocab:
+  load_fpath: null
+  save: true
+
+dataset:
+  data_paths:
+    positive: "./data/data_train/final_positive_reviews.json"
+    neutral: "./data/data_train/final_neutral_reviews.json"
+    negative: "./data/data_train/final_negative_reviews.json"
+  tokenized_fpath: null
+  tokenized_save: true
+  split_rate: 0.8
+
+model:
+  embedding_fpath: "./Data/vi_word2vec.txt"
+  embedding_dim: 100
+  hidden_dim: 128
+  n_layers: 1
+  bidirectional: true
+  dropout: 0.65
+  output_dim: 3
+
+train:
+  n_epochs: 20
+  batch_size: 32
+  logs_dir: null
+  save_epoch: 20
+
+continue:
+  state_fpath: null

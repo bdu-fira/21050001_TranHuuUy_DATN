@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Lịch sử Phân tích</title>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/static/logo.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="/static/styles_shared.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <img src="/static/logo.png" alt="Logo" class="logo">
+            <h1>Lịch sử Phân tích</h1>
+        </div>
+        <div class="header-actions">
+            <a href="/predict" class="header-btn"><i class="fas fa-arrow-left"></i> Quay về</a>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-history"></i> Danh sách các lần phân tích</h2>
+            </div>
+            <div class="card-body">
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tổng số bình luận</th>
+                            <th>Nhận xét chung</th>
+                            <th>Ngày phân tích</th>
+                            <th style="width: 150px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr data-row-id="{{ report.id }}">
+                            <td>{{ report.id }}</td>
+                            <td>{{ report.total_reviews }}</td>
+                            <td>{{ report.avg_sentiment_type }}</td>
+                            <td>{{ report.created_at }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/view_report/{{ report.id }}" class="btn btn-success">
+                                        <i class="fas fa-eye"></i> Xem
+                                    </a>
+                                    <button class="btn btn-danger" data-id="{{ report.id }}" title="Xóa báo cáo">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const deleteButtons = document.querySelectorAll('.btn-danger');
+        
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const reportId = this.dataset.id;
+                
+                if (confirm('Bạn có chắc chắn muốn xóa báo cáo này không?')) {
+                    fetch('/delete_report/' + reportId, {
+                        method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')}
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const row = document.querySelector(`tr[data-row-id='${reportId}']`);
+                            if (row) {
+                                row.remove();
+                            }
+                            alert(data.message);
+                        } else {
+                            alert('Lỗi: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Đã xảy ra lỗi khi xóa báo cáo.');
+                    });
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

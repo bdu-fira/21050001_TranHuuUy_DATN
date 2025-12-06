@@ -1,0 +1,7 @@
+__pycache__/
+.vector_cache/
+*.pyc
+.env
+venv/
+*.db
+Data/vi_word2vec.txt

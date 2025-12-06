@@ -1,0 +1,254 @@
+clb: câu lạc bộ
+cty: công ty
+ngta, nta: người ta
+lm: làm
+tr, trag: trang
+khg, ko, k0, hok, hong, hông, k, hum, khum, khôg, hôg, kh, kô: không
+chx: chưa
+đc, dc: được
+đg, dg, đag: đang
+ng: người
+mn, mng: mọi người
+bt, bik, bít, bk, pjt: biết
+h, jo: giờ
+hc, họk: học
+vs: với
+vt: viết
+vc: việc
+trc: trước
+j, rì, ji: gì
+xg, xog: xong
+bx: bữa
+nx: nữa
+cx, kũg, cũg: cũng
+pk: phải
+vg: vâng
+hp: học phí
+nhiu: nhiêu
+v, zậy: vậy
+mih, mjh, mìnk, mik, mk: mình
+m: mày
+t: tôi
+s: sao
+r, roài, roai, rùi, rui, zồi, zùi, òy, òy: rồi
+chs: chơi
+ae: anh em
+a: anh
+e, elm: em
+cj, c: chị
+dj, đj, đuy: đi
+tui: tôi
+Lemỏn: chảnh
+Sin lũi, xloi, xl: xin lỗi
+đỉnk: đỉnh
+zui: vui
+gd, gđ, gdinh, gđình: gia đình
+lun: luôn
+trg, trườg: trường
+gv: giáo viên
+hs: học sinh
+sv, sviên: sinh viên
+hs-sv, hssv: học sinh - sinh viên
+nv: nhân viên
+csvc: cơ sở vật chất
+nvs: nhà vệ sinh
+ktx: ký túc xá
+ctrai, ctraj: con trai
+bme: bố mẹ
+cta, chta: chúng ta
+mqh: mối quan hệ
+cgai: con gái
+nhữg: những
+svtn: sinh viên tình nguyện
+qtam, qtâm, wtâm: quan tâm
+thươg: thương
+chug: chung
+thoy, hoy, thuj, hoi: thôi
+đki, dky, đky: đăng ký
+atsm: ảo tưởng sức mạnh
+ạk, ạh: ạ
+vch, vchg: vãi chưởng
+cùg: cùng
+pn, bn: bạn
+thjk, thík, thjc, thíck, thik: thích
+ktra: kiểm tra
+nek, nèk: nè
+nthe, nthê, nthế: như thế
+chúg: chúng
+kái: cái
+tìh: tình
+phòg: phòng
+lòg: lòng
+từg: từng
+rằg: rằng
+sốg: sống
+càg: càng
+bằg: bằng
+đág: đáng
+nvay, nvậy: như vậy
+nhjeu: nhiêu
+zữ: dữ
+atrai: anh trai
+kte: kinh tế
+độg: động
+gắg: gắng
+đzai, dz, đz: đẹp trai
+thgian, tgian: thời gian
+đồg: đồng
+btrai: bạn trai
+vọg: vọng
+đôg: đông
+răg: răng
+thườg: thường
+tcảm: tình cảm
+đứg: đứng
+ksao: không sao
+cmày: chúng mày
+xuốg: xuống
+lquan: liên quan
+tiếg: tiếng
+xih, xink: xinh
+hìh: hình
+thàh: thành
+ngke: nghe
+dzậy: dậy
+tnào: thế nào
+tưởg: tưởng
+ctrinh, ctrình, ctr: chương trình
+phog: phong
+ntnao, ntn: như thế nào
+trọg: trọng
+năg: năng
+ngđó, ngđo: người đó
+lquen: làm quen
+riêg: riêng
+ngag: ngang
+bnhiu, bnhiêu: bao nhiêu
+ngốk: ngốc
+kậu: cậu
+kqua: kết quả
+htrc: hôm trước
+địh: định
+giốg: giống
+csống, csong: cuộc sống
+cbị: chuẩn bị
+buôg: buông
+chàg: chàng
+chăg: chăng
+ngàh: ngành
+llac: liên lạc
+nắg: nắng
+tíh: tính
+khoảg: khoảng
+ngkhác: người khác
+thẳg: thẳng
+kảm: cảm
+dàh: dành
+júp: giúp
+lặg: lặng
+vđê, vde: vấn đề
+bbè: bạn bè
+bóg: bóng
+dòg: dòng
+uốg: uống
+tyêu: tình yêu
+snvv: sinh nhật vui vẻ
+đthoại, đthoai, đt: điện thoại
+qhe, qhệ: quan hệ
+cviec: công việc
+tượg: tượng
+qà: quà
+nhưq, nhưg: nhưng
+cđời: cuộc đời
+bthường, bth: bình thường
+zà: già
+đáh: đánh
+zám: dám
+qtrọng: quan trọng
+bìh: bình
+lzi, lgi: làm gì
+bdu: đại học bình dương
+kủa: của
+đóg: đóng
+qả: quả
+đkiện, đk: điều kiện
+tlai: tương lai
+bsĩ: bác sĩ
+hkì: học kỳ
+đcsvn: đảng cộng sản việt nam
+ltinh: linh tinh
+ngyeu, nyêu, ny: người yêu
+snghĩ: suy nghĩ
+nặg: nặng
+dừg: dừng
+hphúc: hạnh phúc
+chuện: chuyện
+lạh: lạnh
+ntnày: như thế này
+lúk: lúc
+haj: hai
+ngía: nghía
+mớj, ms: mới
+hsơ: hồ sơ
+kih: kinh
+kb: kết bạn
+dthương: dễ thương
+thỳ: thì
+nyc: người yêu cũ
+nàg: nàng
+đjên: điên
+bgái: bạn gái
+hđộng: hành động
+đhọc, đh: đại học
+ck, chk: chồng
+vk: vợ
+ctác: công tác
+sg: sài gòn
+vn: việt nam
+ace: anh chị em
+àk, ak, ah, àh: à
+uh, ukm, uh, uk, um: ừ
+cmm: con mẹ mày
+cmnr: con mẹ nó rồi
+hnay: hôm nay
+tq: trung quốc
+nch: nói chuyện
+ngèo: nghèo
+kêh: kênh
+qc: quảng cáo
+baoh: bao giờ
+zẻ: vẻ
+tym: tim
+đhs: đéo hiểu sao
+qá, wá, wa: quá
+zô: vô
+vđ: vãi đái
+sml: sấp mặt lờ
+cmn: con mẹ nó
+hjhj: hi hi
+vv: vui vẻ
+ns: nói
+iu: yêu
+vcđ: vãi cải đái
+qq: quần què
+bsvv: buổi sáng vui vẻ
+troai: trai
+ce: chị em
+đbh: đéo bao giờ
+vd: ví dụ
+đtqg: đội tuyển quốc gia
+hqua: hôm qua
+nhoé: nhé
+stk: số tài khoản
+nvqs: nghĩa vụ quân sự
+trog: trong
+fải: phải
+tđn: thế đéo nào
+vcđ: vãi cả đái
+thpt: trung học phổ thông
+thằg, thg: thằng
+ku: cu
+thým: thím
+cmnd: chứng minh nhân dân
+sđt: số điện thoại
+klq: không liên quan
