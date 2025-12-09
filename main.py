@@ -28,6 +28,11 @@ from torch.nn.utils.rnn import pad_sequence
 
 load_dotenv()
 
+if not os.getenv('GMAP_PLACE_ID'):
+    print("LỖI CRITICAL: Không tìm thấy biến 'GMAP_PLACE_ID' trong file .env!")
+    print("Vui lòng thêm dòng: GMAP_PLACE_ID=YourPlaceID vào file .env")
+    exit(1)
+
 app = Flask(__name__)
 
 # --- CẤU HÌNH BẢO MẬT ---

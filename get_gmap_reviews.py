@@ -61,6 +61,12 @@ def scroll_reviews(driver):
 
 def get_all_google_maps_reviews():
     place_id = os.getenv('GMAP_PLACE_ID')
+
+    if not place_id:
+        print("LỖI CRITICAL: Không tìm thấy biến 'GMAP_PLACE_ID' trong file .env!")
+        print("Vui lòng thêm dòng: GMAP_PLACE_ID=YourPlaceIDHere vào file .env")
+        exit(1)
+    
     options = Options()
     options.add_argument("--lang=vi")
     # Ẩn cửa sổ trình duyệt

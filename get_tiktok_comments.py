@@ -13,7 +13,14 @@ load_dotenv()
 
 # Cấu hình từ khóa tìm kiếm
 # Lưu ý: Với Hashtag không cần điền dấu #. Với cụm từ tìm kiếm thì điền bình thường.
-SEARCH_KEYWORDS = ["DaiHocBinhDuong", "BDU", "Đại học Bình Dương"]
+keywords_env = os.getenv("SEARCH_KEYWORDS")
+
+if not keywords_env:
+    print("LỖI CRITICAL: Không tìm thấy biến 'SEARCH_KEYWORDS' trong file .env!")
+    print("Vui lòng thêm dòng: SEARCH_KEYWORDS=TuKhoa1,TuKhoa2,... vào file .env")
+    exit(1)
+
+SEARCH_KEYWORDS = [k.strip() for k in keywords_env.split(',') if k.strip()]
 
 # Cấu hình giới hạn
 VIDEOS_PER_KEYWORD = 10  # Số lượng video lấy cho mỗi từ khóa

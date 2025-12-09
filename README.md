@@ -51,6 +51,9 @@ FLASK_DEBUG=False
 # Webshare proxy API Keys
 WEBSHARE_API_KEY=your_webshare_api
 
+# Search keywords cho Tiktok Scraper
+SEARCH_KEYWORDS=DaiHocBinhDuong,BDU,Đại học Bình Dương
+
 # ID địa điểm trên Google Maps (trường Đại học Bình Dương)
 GMAP_PLACE_ID=ChIJncGVJL7RdDERwv9mRNl32a8
 ```
