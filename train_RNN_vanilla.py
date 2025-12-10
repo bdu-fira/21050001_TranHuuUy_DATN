@@ -2,6 +2,7 @@ import time
 import argparse
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import CosineAnnealingLR
@@ -9,6 +10,10 @@ import utils
 import numpy as np
 from RNN_vanilla import RNN_vanilla
 import os
+from sklearn.metrics import roc_curve, auc
+from sklearn.preprocessing import label_binarize
+import matplotlib.pyplot as plt
+from itertools import cycle
 
 def train(model, dataloader, optimizer, criterion, device):
     epoch_loss = 0
@@ -40,6 +45,8 @@ def evaluate(model, dataloader, criterion, device):
     epoch_acc = 0
     all_preds = []
     all_labels = []
+    all_probs = []
+    
     model.eval()
     
     with torch.no_grad():
@@ -47,34 +54,85 @@ def evaluate(model, dataloader, criterion, device):
             reviews, reviews_lengths = batch["reviews"]
             reviews = reviews.to(device)
             
-            predictions = model(reviews, reviews_lengths)
+            # Logits từ model
+            logits = model(reviews, reviews_lengths)
+            
+            # Tính xác suất (Softmax) cho ROC
+            probs = F.softmax(logits, dim=1)
           
             sentiments = batch["sentiments"].to(device)
-            loss = criterion(predictions, sentiments)  
+            loss = criterion(logits, sentiments)  
             
-            acc = utils.multiclass_accuracy(predictions, sentiments)
+            acc = utils.multiclass_accuracy(logits, sentiments)
 
             epoch_loss += loss.item()
             epoch_acc += acc.item()
 
-            all_preds.append(predictions.cpu())
+            all_preds.append(logits.cpu())
             all_labels.append(sentiments.cpu())
+            all_probs.append(probs.cpu())
 
     all_preds = torch.cat(all_preds)
     all_labels = torch.cat(all_labels)
+    all_probs = torch.cat(all_probs)
 
     precision, f1, cm = utils.calculate_metrics(all_preds, all_labels)
         
-    return epoch_loss / len(dataloader), epoch_acc / len(dataloader), precision, f1, cm
+    return epoch_loss / len(dataloader), epoch_acc / len(dataloader), precision, f1, cm, all_probs, all_labels
+
+def plot_multiclass_roc(y_test, y_score, n_classes, target_names, save_path):
+    """
+    Hàm vẽ đường cong ROC cho bài toán phân loại đa lớp (One-vs-Rest)
+    """
+    # Binarize labels (One-hot encoding cho nhãn thực tế)
+    y_test_bin = label_binarize(y_test, classes=list(range(n_classes)))
+    
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    
+    # Tính FPR, TPR, AUC cho từng lớp
+    for i in range(n_classes):
+        fpr[i], tpr[i], _ = roc_curve(y_test_bin[:, i], y_score[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+        
+    # Tính micro-average ROC curve và ROC area
+    fpr["micro"], tpr["micro"], _ = roc_curve(y_test_bin.ravel(), y_score.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    # Vẽ biểu đồ
+    plt.figure(figsize=(8, 6))
+    lw = 2
+    
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    for i, color in zip(range(n_classes), colors):
+        plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+                 label='ROC curve of class {0} (area = {1:0.2f})'
+                 ''.format(target_names[i], roc_auc[i]))
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) - Vanilla RNN')
+    plt.legend(loc="lower right")
+    
+    plt.savefig(save_path)
+    print(f"Đã lưu biểu đồ ROC vào: {save_path}")
+    plt.close()
 
 def get_vanilla_rnn_model(config, vocabulary, embedding_matrix):
     """
     Hàm riêng để tạo mô hình RNN_vanilla với embedding matrix đã tạo.
     """
     embedding_dim = config["model"]["embedding_dim"]
-    hidden_dim = config["model"]["hidden_dim"]
-    n_layers = config["model"]["n_layers"]
-    bidirectional = config["model"]["bidirectional"]
+    
+    # Thiết lập các tham số để đảm bảo đây là mô hình 'Vanilla' cơ bản
+    hidden_dim = 64
+    n_layers = 1
+    bidirectional = False
+    
     dropout = config["model"]["dropout"]
     output_dim = config["model"]["output_dim"]
 
@@ -113,10 +171,7 @@ def main(config_fpath):
     # --- 2. Load Word2Vec & Create Embedding Matrix ---
     print("Loading Pretrained Word Embeddings...")
     
-    # --- SỬA LỖI Ở ĐÂY: Dùng key 'embedding_fpath' trong 'model' ---
     word2vec_path = config["model"]["embedding_fpath"] 
-    # ---------------------------------------------------------------
-
     word2vec = utils.get_pretrained_word2vec(word2vec_path)
     
     embedding_dim = config["model"]["embedding_dim"]
@@ -140,19 +195,18 @@ def main(config_fpath):
 
     print("Creating optimizer and loss function...")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    optimizer = optim.AdamW(model.parameters(), weight_decay=1e-4)
+    
+    # Sử dụng SGD
+    optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
 
     print("Creating Learning Rate Scheduler (CosineAnnealingLR)...")
     scheduler = CosineAnnealingLR(optimizer, T_max=n_epochs)
 
     # --- 5. Class Weighting ---
-    # train_dataset.tensor_label chứa toàn bộ nhãn của tập train
     train_labels = train_dataset.tensor_label.numpy()
     class_counts = np.bincount(train_labels)
     
-    # Tính trọng số nghịch đảo tần suất
     class_weights = 1. / (class_counts + 1e-6)
-    # Chuẩn hóa để tổng trọng số ~ số lớp (3)
     class_weights = class_weights / np.sum(class_weights) * 3
     
     class_weights_tensor = torch.tensor(class_weights, dtype=torch.float).to(device)
@@ -187,7 +241,7 @@ def main(config_fpath):
     for epoch in range(begin_epoch, n_epochs):
         start_time = time.time()
         train_loss, train_acc = train(model, train_dataloader, optimizer, criterion, device)
-        valid_loss, valid_acc, valid_precision, valid_f1, _ = evaluate(model, valid_dataloader, criterion, device)
+        valid_loss, valid_acc, valid_precision, valid_f1, _, _, _ = evaluate(model, valid_dataloader, criterion, device)
         end_time = time.time()
 
         epoch_mins, epoch_secs = utils.epoch_time(start_time, end_time)
@@ -231,25 +285,35 @@ def main(config_fpath):
 
     print("\n----------------------------------------------------")
     print("Testing with the best model...")
-    # Tải mô hình tốt nhất đã được lưu
     if os.path.exists(best_model_path):
         model = torch.load(best_model_path)
     else:
         print("Không tìm thấy model tốt nhất, sử dụng model hiện tại.")
 
-    test_loss, test_acc, test_precision, test_f1, test_cm = evaluate(model, test_dataloader, criterion, device)
+    # Đánh giá trên tập test, lấy thêm probs và labels để vẽ ROC
+    test_loss, test_acc, test_precision, test_f1, test_cm, test_probs, test_labels = evaluate(model, test_dataloader, criterion, device)
+    
     print(f"Test Loss: {test_loss:.3f} | Test Acc: {test_acc*100:.2f}%")
     print(f"Test Precision: {test_precision:.3f} | Test F1-score: {test_f1:.3f}")
 
     print("\nConfusion Matrix:")
     print(test_cm)
 
-    # Vẽ và lưu ma trận nhầm lẫn
-    import matplotlib.pyplot as plt
+    # Mapping label
+    target_names = ['negative', 'neutral', 'positive']
+
+    # 1. Vẽ và lưu Confusion Matrix
     plt.figure(figsize=(8, 6))
-    utils.plot_confusion_matrix(test_cm, classes=['negative', 'neutral', 'positive'], title='Confusion matrix')
+    utils.plot_confusion_matrix(test_cm, classes=target_names, title='Confusion matrix - RNN Vanilla')
     plt.savefig(f"{current_log_dir}/confusion_matrix.png")
     print(f"Confusion matrix saved to {current_log_dir}/confusion_matrix.png")
+    plt.close()
+
+    # 2. Vẽ và lưu ROC Curve
+    roc_save_path = f"{current_log_dir}/roc_curve.png"
+    # test_probs là tensor xác suất (sau softmax), test_labels là tensor nhãn thực
+    plot_multiclass_roc(test_labels.cpu().numpy(), test_probs.cpu().numpy(), 
+                        n_classes=3, target_names=target_names, save_path=roc_save_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Vietnamese Sentiment Analysis model (Vanilla RNN)")

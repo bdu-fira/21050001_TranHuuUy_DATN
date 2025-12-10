@@ -2,11 +2,13 @@ import torch
 import utils
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.svm import LinearSVC
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_curve, auc
+from sklearn.preprocessing import label_binarize
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 import os
+from itertools import cycle
 
 def prepare_data_for_svm(dataset):
     """
@@ -22,6 +24,48 @@ def prepare_data_for_svm(dataset):
     
     return texts, labels
 
+def plot_multiclass_roc(y_test, y_score, n_classes, target_names, save_path):
+    """
+    Hàm vẽ đường cong ROC cho bài toán phân loại đa lớp (One-vs-Rest)
+    """
+    # Binarize labels
+    y_test_bin = label_binarize(y_test, classes=list(range(n_classes)))
+    
+    fpr = dict()
+    tpr = dict()
+    roc_auc = dict()
+    
+    # Tính FPR, TPR, AUC cho từng lớp
+    for i in range(n_classes):
+        fpr[i], tpr[i], _ = roc_curve(y_test_bin[:, i], y_score[:, i])
+        roc_auc[i] = auc(fpr[i], tpr[i])
+        
+    # Tính micro-average ROC curve và ROC area
+    fpr["micro"], tpr["micro"], _ = roc_curve(y_test_bin.ravel(), y_score.ravel())
+    roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+    # Vẽ biểu đồ
+    plt.figure(figsize=(8, 6))
+    lw = 2
+    
+    colors = cycle(['aqua', 'darkorange', 'cornflowerblue'])
+    for i, color in zip(range(n_classes), colors):
+        plt.plot(fpr[i], tpr[i], color=color, lw=lw,
+                 label='ROC curve of class {0} (area = {1:0.2f})'
+                 ''.format(target_names[i], roc_auc[i]))
+
+    plt.plot([0, 1], [0, 1], 'k--', lw=lw)
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver Operating Characteristic (ROC) - SVM')
+    plt.legend(loc="lower right")
+    
+    plt.savefig(save_path)
+    print(f"Đã lưu biểu đồ ROC vào: {save_path}")
+    plt.close()
+
 def main(config_fpath):
     """
     Hàm chính để huấn luyện và đánh giá mô hình SVM với Túi từ (Bag-of-Words).
@@ -36,8 +80,6 @@ def main(config_fpath):
     # -----------------------
 
     # --- Tải và Tiền xử lý dữ liệu (Luồng mới từ utils.py) ---
-    # Hàm này đã thực hiện: Load JSON -> Normalize -> Tokenize -> Split -> Build Vocab
-    # Trả về các đối tượng IMDBDataset
     vocab, train_dataset, valid_dataset, test_dataset = utils.preprocess_and_load_data(config, log_dir)
 
     print("\nĐang chuẩn bị dữ liệu cho SVM...")
@@ -55,13 +97,12 @@ def main(config_fpath):
     print("\nVector hóa văn bản với Túi từ (BoW)...")
     
     # Khởi tạo CountVectorizer
-    # Lưu ý: Dữ liệu vào đã được tách từ (bởi underthesea trong utils), 
-    # các từ ghép nối bằng '_'. Ta chỉ cần split bằng khoảng trắng đơn giản.
+    # Cấu hình cơ bản cho mô hình
     bow_vectorizer = CountVectorizer(
         tokenizer=lambda x: x.split(), # Tách theo khoảng trắng
         token_pattern=None,            # Tắt warning mặc định của sklearn
-        max_features=10000,            # Giới hạn số từ vựng (top frequent)
-        ngram_range=(1, 2)             # Sử dụng unigram và bigram
+        max_features=2000,             # Giới hạn số lượng từ vựng phổ biến nhất
+        ngram_range=(1, 1)             # Chỉ sử dụng unigram
     )
 
     # Học từ vựng từ tập train và transform
@@ -75,8 +116,8 @@ def main(config_fpath):
 
     # --- Huấn luyện mô hình SVM ---
     print("\nHuấn luyện mô hình LinearSVC (SVM)...")
-    # Khởi tạo mô hình SVM tuyến tính
-    svm_classifier = LinearSVC(C=1.0, random_state=42, max_iter=3000, dual='auto')
+    # Khởi tạo mô hình SVM tuyến tính với các tham số chuẩn hóa cơ bản
+    svm_classifier = LinearSVC(C=0.1, random_state=42, max_iter=3000, dual='auto')
 
     # Huấn luyện mô hình
     svm_classifier.fit(X_train_bow, y_train)
@@ -102,16 +143,24 @@ def main(config_fpath):
     print("\nBáo cáo phân loại (Classification Report):")
     print(report)
 
-    # Vẽ và lưu ma trận nhầm lẫn
+    # 1. Vẽ và lưu ma trận nhầm lẫn
     plt.figure(figsize=(8, 6))
     utils.plot_confusion_matrix(cm, 
                                 classes=target_names, 
                                 title='Confusion Matrix - SVM with BoW')
     
-    save_path = f"{log_dir}/confusion_matrix_svm_bow.png"
-    plt.savefig(save_path)
-    print(f"\nĐã lưu ma trận nhầm lẫn vào: {save_path}")
+    cm_save_path = f"{log_dir}/confusion_matrix_svm_bow.png"
+    plt.savefig(cm_save_path)
+    print(f"\nĐã lưu ma trận nhầm lẫn vào: {cm_save_path}")
     plt.close()
+
+    # 2. Vẽ và lưu đường cong ROC
+    # Lấy điểm số quyết định (decision function scores) thay vì nhãn dự đoán
+    # LinearSVC trả về khoảng cách đến siêu phẳng phân cách
+    y_score = svm_classifier.decision_function(X_test_bow)
+    
+    roc_save_path = f"{log_dir}/roc_curve_svm_bow.png"
+    plot_multiclass_roc(y_test, y_score, n_classes=3, target_names=target_names, save_path=roc_save_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate SVM model with Bag-of-Words (BoW)")
