@@ -7,6 +7,12 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="/static/styles_shared.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        /* Ẩn cột ID nhưng vẫn giữ data attribute */
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -25,26 +31,33 @@
                 <h2><i class="fas fa-history"></i> Danh sách các lần phân tích</h2>
             </div>
             <div class="card-body">
-                <table class="styled-table">
+                <table class="styled-table" id="historyTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
                             <th>Tổng số bình luận</th>
                             <th>Nhận xét chung</th>
                             <th>Ngày phân tích</th>
                             <th style="width: 150px;">Hành động</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tableBody">
                         {% for report in reports %}
-                        <tr data-row-id="{{ report.id }}">
-                            <td>{{ report.id }}</td>
+                        <!-- Giữ data-row-id để xử lý logic xóa -->
+                        <tr data-row-id="{{ report.id }}" class="data-row">
                             <td>{{ report.total_reviews }}</td>
-                            <td>{{ report.avg_sentiment_type }}</td>
+                            <td>
+                                {% if report.avg_sentiment_type == 'Tích cực' %}
+                                    <span style="color: #28a745; font-weight: bold;">{{ report.avg_sentiment_type }}</span>
+                                {% elif report.avg_sentiment_type == 'Tiêu cực' %}
+                                    <span style="color: #dc3545; font-weight: bold;">{{ report.avg_sentiment_type }}</span>
+                                {% else %}
+                                    <span style="color: #ffc107; font-weight: bold;">{{ report.avg_sentiment_type }}</span>
+                                {% endif %}
+                            </td>
                             <td>{{ report.created_at }}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <a href="/view_report/{{ report.id }}" class="btn btn-success">
+                                    <a href="/view_report/{{ report.id }}" class="btn btn-success" title="Xem chi tiết">
                                         <i class="fas fa-eye"></i> Xem
                                     </a>
                                     <button class="btn btn-danger" data-id="{{ report.id }}" title="Xóa báo cáo">
@@ -56,44 +69,151 @@
                         {% endfor %}
                     </tbody>
                 </table>
+
+                <!-- Khu vực điều khiển phân trang -->
+                <div class="pagination-controls" id="paginationControls">
+                    <div class="pagination-info">
+                        Hiển thị trang <b id="displayCurrentPage">1</b> / <b id="displayTotalPages">1</b>
+                    </div>
+                    
+                    <div class="pagination-actions">
+                        <button class="page-btn" id="prevBtn" onclick="changePage(-1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        
+                        <button class="page-btn" id="nextBtn" onclick="changePage(1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+
+                        <div class="jump-box">
+                            <span>Đến trang:</span>
+                            <input type="number" id="pageJumpInput" class="page-input" min="1" value="1">
+                            <button class="page-btn" onclick="jumpToPage()">Đi</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+    // === Cấu hình Phân trang ===
+    const ROWS_PER_PAGE = 5;
+    let currentPage = 1;
+    let allRows = []; 
+
     document.addEventListener('DOMContentLoaded', function() {
-        const deleteButtons = document.querySelectorAll('.btn-danger');
-        
-        deleteButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const reportId = this.dataset.id;
-                
-                if (confirm('Bạn có chắc chắn muốn xóa báo cáo này không?')) {
-                    fetch('/delete_report/' + reportId, {
-                        method: 'POST',
-                            headers: {
-                                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')}
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            const row = document.querySelector(`tr[data-row-id='${reportId}']`);
-                            if (row) {
-                                row.remove();
-                            }
-                            alert(data.message);
-                        } else {
-                            alert('Lỗi: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Đã xảy ra lỗi khi xóa báo cáo.');
-                    });
-                }
-            });
-        });
+        // Lấy danh sách hàng khi trang vừa load
+        updateRowsList();
+        renderTable();
+        setupDeleteButtons();
     });
+
+    // Hàm cập nhật danh sách hàng (gọi khi load hoặc sau khi xóa)
+    function updateRowsList() {
+        allRows = Array.from(document.querySelectorAll('#tableBody .data-row'));
+    }
+
+    // Hàm hiển thị bảng dựa trên trang hiện tại
+    function renderTable() {
+        const totalRows = allRows.length;
+        const totalPages = Math.ceil(totalRows / ROWS_PER_PAGE) || 1;
+
+        // Đảm bảo trang hiện tại hợp lệ
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        // Tính toán chỉ số bắt đầu và kết thúc
+        const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+        const endIndex = startIndex + ROWS_PER_PAGE;
+
+        // Ẩn tất cả, chỉ hiện các hàng trong phạm vi
+        allRows.forEach((row, index) => {
+            if (index >= startIndex && index < endIndex) {
+                row.style.display = 'table-row';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Cập nhật thông tin hiển thị
+        document.getElementById('displayCurrentPage').textContent = currentPage;
+        document.getElementById('displayTotalPages').textContent = totalPages;
+        document.getElementById('pageJumpInput').max = totalPages;
+        document.getElementById('pageJumpInput').value = currentPage;
+
+        // Cập nhật trạng thái nút
+        document.getElementById('prevBtn').disabled = (currentPage === 1);
+        document.getElementById('nextBtn').disabled = (currentPage === totalPages);
+        
+        // Ẩn phân trang nếu không có dữ liệu
+        if (totalRows === 0) {
+            document.querySelector('.styled-table tbody').innerHTML = '<tr><td colspan="4" style="text-align:center">Chưa có dữ liệu phân tích nào.</td></tr>';
+            document.getElementById('paginationControls').style.display = 'none';
+        }
+    }
+
+    // Chuyển trang (Next/Prev)
+    function changePage(direction) {
+        currentPage += direction;
+        renderTable();
+    }
+
+    // Nhảy đến trang cụ thể
+    function jumpToPage() {
+        const input = document.getElementById('pageJumpInput');
+        let page = parseInt(input.value);
+        const totalRows = allRows.length;
+        const totalPages = Math.ceil(totalRows / ROWS_PER_PAGE) || 1;
+
+        if (page >= 1 && page <= totalPages) {
+            currentPage = page;
+            renderTable();
+        } else {
+            alert(`Vui lòng nhập số trang từ 1 đến ${totalPages}`);
+        }
+    }
+
+    // Xử lý sự kiện Xóa
+    function setupDeleteButtons() {
+        // Sử dụng Event Delegation để không bị lỗi khi DOM thay đổi
+        document.getElementById('tableBody').addEventListener('click', function(e) {
+            // Tìm nút xóa gần nhất (để xử lý click vào icon bên trong nút)
+            const btn = e.target.closest('.btn-danger');
+            if (!btn) return;
+
+            const reportId = btn.getAttribute('data-id');
+            
+            if (confirm('Bạn có chắc chắn muốn xóa báo cáo này không?')) {
+                fetch('/delete_report/' + reportId, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Xóa hàng khỏi DOM
+                        const row = document.querySelector(`tr[data-row-id='${reportId}']`);
+                        if (row) {
+                            row.remove();
+                            // Cập nhật lại danh sách và render lại phân trang
+                            updateRowsList();
+                            renderTable();
+                        }
+                        alert(data.message);
+                    } else {
+                        alert('Lỗi: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Đã xảy ra lỗi khi xóa báo cáo.');
+                });
+            }
+        });
+    }
     </script>
 </body>
 </html>

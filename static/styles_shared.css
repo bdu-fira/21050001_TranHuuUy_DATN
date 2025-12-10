@@ -170,3 +170,67 @@ header h1 {
     display: flex;
     gap: 10px;
 }
+
+/* CSS cho phần phân trang */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pagination-info {
+    color: var(--text-light-color);
+    font-size: 14px;
+}
+
+.pagination-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-btn {
+    background-color: #f0f2f5;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-btn:hover:not(:disabled) {
+    background-color: var(--secondary-color);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+.page-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.jump-box {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 15px;
+    border-left: 1px solid var(--border-color);
+    padding-left: 15px;
+}
+
+.page-input {
+    width: 40px;
+    padding: 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-align: center;
+}
