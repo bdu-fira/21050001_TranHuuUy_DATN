@@ -188,7 +188,7 @@ python main.py
 - Giảm `BATCH_SIZE` trong `main.py`
 - Hoặc sử dụng CPU thay vì GPU
 
-## Ghi Chú Quan Trọng (Important Notes)
+## Điểm nổi bật (Highlights)
 
 1. **Mô hình AI:** Ứng dụng sử dụng mô hình LSTM được huấn luyện từ dữ liệu thu thập được của khoảng 100 trường Đại học
 2. **Hỗ trợ Tiếng Việt:** Sử dụng `underthesea` library để tokenize
@@ -202,16 +202,17 @@ python main.py
 |---------|---------|
 | `/` | Thư mục gốc chứa main.py |
 | `/configs/` | File cấu hình ứng dụng |
-| `/data/` | Dữ liệu và stopwords |
+| `/Crawl_Data/` | Script cào dữ liệu và xử lý dữ liệu thô |
+| `/Data/` | Dữ liệu huấn luyện và chạy ứng dụng |
 | `/templates/` | HTML templates cho Flask |
-| `/static/` | CSS, JavaScript, Images |
+| `/static/` | CSS, hình ảnh |
 | `/logs/` | Các file mô hình đã huấn luyện |
 
 ## Hỗ Trợ (Support)
 
 Nếu gặp vấn đề, vui lòng:
 1. Kiểm tra lại các bước cài đặt
-2. Xem log trong thư mục `/logs/`
+2. Kiểm tra lại mô hình trong thư mục `/logs/`
 3. Kiểm tra kết nối internet (nếu cần gọi API Google/TikTok)
 
 ---
