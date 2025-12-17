@@ -2,12 +2,54 @@
 <html>
 <head>
     <title>Chi tiết phân tích - {{ report.place_name }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="/static/logo.png">
     <link rel="stylesheet" type="text/css" href="/static/styles2.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <!-- CSS TÙY CHỈNH RIÊNG CHO MOBILE CỦA TRANG NÀY -->
+    <style>
+        @media (max-width: 768px) {
+            .stat-school {
+                display: none;
+            }
+
+            .header-actions {
+                justify-content: center !important; 
+                width: 100%;
+                background-color: transparent !important;
+                padding: 0 !important;
+            }
+
+            .header-actions .header-btn {
+                flex: none !important;
+                width: auto !important;
+                display: inline-flex !important;
+                align-items: center;
+                justify-content: center;
+                
+                background-color: #e8f0fe !important;
+                color: #1674E6 !important;
+                border-radius: 20px !important;
+                padding: 8px 20px !important;
+                font-weight: bold;
+                font-size: 14px !important;
+                white-space: nowrap;
+                margin: 0 !important;
+            }
+            
+            .header-actions .header-btn i {
+                margin-right: 8px !important;
+                font-size: 14px !important;
+            }
+
+            .main-container {
+                padding: 10px !important;
+            }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -16,7 +58,9 @@
             <h1>Chi tiết Phân tích</h1>
         </div>
         <div class="header-actions">
-            <a href="/analysis_history" class="header-btn"><i class="fas fa-arrow-left"></i> Quay về</a>
+            <a href="/analysis_history" class="header-btn">
+                <i class="fas fa-arrow-left"></i> Quay về
+            </a>
         </div>
     </header>
 
@@ -26,10 +70,10 @@
             <!-- Thẻ Đánh giá Tổng quan -->
             <div class="card summary-card">
                 <div class="card-header">
-                    <h2><i class="fas fa-chart-bar"></i> Đánh giá Tổng quan ({{ report.created_at }})</h2>
+                    <h2><i class="fas fa-chart-bar"></i> Đánh giá Tổng quan <small>({{ report.created_at }})</small></h2>
                 </div>
                 <div class="summary-stats">
-                    <div class="stat-item">
+                    <div class="stat-item stat-school">
                         <h4>Trường</h4>
                         <p>Đại học Bình Dương</p>
                     </div>
@@ -115,7 +159,7 @@
 
             <!-- Lưới chứa các biểu đồ -->
             <div class="charts-grid">
-                <!-- Biểu đồ tròn (ĐÃ SỬA: class pie-chart-wrapper) -->
+                <!-- Biểu đồ tròn -->
                 <div class="card chart-card">
                     <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Tỷ lệ Cảm xúc</h3></div>
                     <div class="card-body chart-container pie-chart-wrapper">
@@ -196,8 +240,10 @@
                 plugins: {
                     legend: {
                         position: 'bottom',
+                        labels: { boxWidth: 12, padding: 10 }
                     }
-                }
+                },
+                layout: { padding: 0 }
             }
         });
 
@@ -253,7 +299,7 @@
                                 beginAtZero: true,
                                 title: {
                                     display: true,
-                                    text: 'Số lượng bình luận'
+                                    text: 'Số lượng'
                                 }
                             }
                         },
@@ -263,7 +309,7 @@
                             },
                             title: {
                                 display: true,
-                                text: 'So sánh Tần suất Chủ đề Khen và Chê'
+                                text: 'So sánh Khen và Chê'
                             }
                         }
                     }

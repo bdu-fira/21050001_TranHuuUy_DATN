@@ -3,6 +3,7 @@
 <head>
     <title>Danh sách ý kiến đóng góp</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/static/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="/static/styles_shared.css">
@@ -36,9 +37,10 @@
                     <tbody id="tableBody">
                         {% for feedback in feedbacks %}
                         <tr class="data-row">
-                            <td>{{ feedback.name }}</td>
-                            <td>{{ feedback.feedback }}</td>
-                            <td>{{ feedback.created_at }}</td>
+                            <!-- Thêm data-label cho mobile view -->
+                            <td data-label="Tên">{{ feedback.name }}</td>
+                            <td data-label="Nội dung">{{ feedback.feedback }}</td>
+                            <td data-label="Ngày gửi">{{ feedback.created_at }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -99,7 +101,12 @@
             // Ẩn tất cả, chỉ hiện các hàng trong phạm vi
             allRows.forEach((row, index) => {
                 if (index >= startIndex && index < endIndex) {
-                    row.style.display = 'table-row';
+                    row.style.display = ''; 
+                    if (window.innerWidth > 768) {
+                        row.style.display = 'table-row';
+                    } else {
+                        row.style.display = 'block';
+                    }
                 } else {
                     row.style.display = 'none';
                 }
@@ -142,6 +149,9 @@
                 alert(`Vui lòng nhập số trang từ 1 đến ${totalPages}`);
             }
         }
+        
+        // Lắng nghe thay đổi kích thước màn hình để cập nhật display style
+        window.addEventListener('resize', renderTable);
     </script>
 </body>
 </html>

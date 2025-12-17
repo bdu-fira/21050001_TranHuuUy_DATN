@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Công cụ phân tích mạng xã hội</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="icon" type="image/png" href="/static/logo.png">
     <link rel="stylesheet" type="text/css" href="/static/styles2.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
@@ -13,14 +14,14 @@
     <header>
         <div class="header-content">
             <img src="/static/logo.png" alt="Logo" class="logo">
-            <h1>Bảng điều khiển Phân tích Cảm xúc</h1>
+            <h1>Bảng điều khiển <br class="mobile-break">Phân tích Cảm xúc</h1>
         </div>
         <div class="header-actions">
-            <a href="/view_feedbacks" class="header-btn"><i class="fas fa-comments"></i> Xem góp ý</a>
-            <a href="/analysis_history" class="header-btn"><i class="fas fa-history"></i> Lịch sử phân tích</a>
+            <a href="/view_feedbacks" class="header-btn"><i class="fas fa-comments"></i> <span>Góp ý</span></a>
+            <a href="/analysis_history" class="header-btn"><i class="fas fa-history"></i> <span>Lịch sử</span></a>
             <a href="/logout" class="header-btn btn-logout" title="Đăng xuất">
                 <i class="fas fa-power-off"></i>
-                <span class="logout-text">Đăng xuất</span>
+                <span class="logout-text">Thoát</span>
             </a>
         </div>
     </header>
@@ -46,7 +47,7 @@
                 </div>
                 <div class="card-body">
                     <form id="predict-form">
-                        <textarea name="text" rows="8" placeholder="Nhập văn bản cần phân tích ở đây..."></textarea>
+                        <textarea name="text" rows="5" placeholder="Nhập văn bản cần phân tích ở đây..."></textarea>
                         <button type="submit">Phân tích ngay</button>
                     </form>
                     <div id="result" class="quick-analysis-result"></div>
@@ -66,7 +67,7 @@
                             </h2>
                         </div>
                         <div class="summary-stats">
-                            <div class="stat-item">
+                            <div class="stat-item stat-school">
                                 <h4>Trường</h4>
                                 <p>Đại học Bình Dương</p>
                             </div>
@@ -152,7 +153,6 @@
 
                     <!-- Khu vực biểu đồ -->
                     <div class="charts-grid">
-                        <!-- Biểu đồ tròn (ĐÃ SỬA: class pie-chart-wrapper) -->
                         <div class="card chart-card">
                             <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Tỷ lệ Cảm xúc</h3></div>
                             <div class="card-body chart-container pie-chart-wrapper">
@@ -160,7 +160,6 @@
                             </div>
                         </div>
 
-                        <!-- Biểu đồ Venn -->
                         <div class="card chart-card">
                             <div class="card-header"><h3><i class="fas fa-circle-notch"></i> Biểu đồ Venn</h3></div>
                             <div class="card-body">
@@ -168,7 +167,6 @@
                             </div>
                         </div>
                         
-                        <!-- Word Cloud -->
                         <div class="card chart-card full-width">
                             <div class="card-header"><h3><i class="fas fa-cloud"></i> Word Cloud</h3></div>
                             <div class="card-body wordcloud-container">
@@ -187,7 +185,6 @@
                             </div>
                         </div>
 
-                        <!-- Phân tích N-grams -->
                         <div class="card chart-card full-width">
                             <div class="card-header">
                                 <h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3>
@@ -217,9 +214,9 @@
                             <button class="filter-button" data-filter="Tiêu cực">Tiêu cực</button>
                         </div>
                     </div>
-                    <div id="reviews-list-debug" class="card-body"> -->
-                        <!-- Mẫu bình luận Tích cực -->
-                        <!-- <div class="review-item">
+                    <div id="reviews-list-debug" class="card-body">
+
+                        <div class="review-item">
                             <div class="review-header">
                                 <span class="review-author"><i class="fas fa-user"></i> Nguyễn Văn A</span>
                                 <span class="review-time"><i class="fas fa-clock"></i> 10:30 - 25/11/2023</span>
@@ -230,10 +227,9 @@
                             <div class="review-footer">
                                 <span class="sentiment-type positive">Tích cực</span>
                             </div>
-                        </div> -->
+                        </div>
 
-                        <!-- Mẫu bình luận Tiêu cực -->
-                        <!-- <div class="review-item">
+                        <div class="review-item">
                             <div class="review-header">
                                 <span class="review-author"><i class="fas fa-user"></i> Trần Thị B</span>
                                 <span class="review-time"><i class="fas fa-clock"></i> 09:15 - 24/11/2023</span>
@@ -244,10 +240,9 @@
                             <div class="review-footer">
                                 <span class="sentiment-type negative">Tiêu cực</span>
                             </div>
-                        </div> -->
+                        </div>
 
-                        <!-- Mẫu bình luận Trung tính -->
-                        <!-- <div class="review-item">
+                        <div class="review-item">
                             <div class="review-header">
                                 <span class="review-author"><i class="fas fa-user"></i> Lê Văn C</span>
                                 <span class="review-time"><i class="fas fa-clock"></i> 08:00 - 23/11/2023</span>
@@ -310,7 +305,7 @@
         if (summaryTitle.length) {
             const timestamp = summaryTitle.data('timestamp');
             const formattedTime = formatDateTime(timestamp);
-            summaryTitle.html(`<i class="fas fa-chart-bar"></i> Đánh giá Tổng quan (${formattedTime})`);
+            summaryTitle.html(`<i class="fas fa-chart-bar"></i> Đánh giá Tổng quan <small>(${formattedTime})</small>`);
         }
         
         // --- REUSABLE FUNCTION TO CREATE TOPIC COMPARISON CHART ---
@@ -353,8 +348,8 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Số lượng bình luận' } } },
-                        plugins: { legend: { position: 'top' }, title: { display: true, text: 'So sánh Tần suất Chủ đề Khen và Chê' } }
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } } },
+                        plugins: { legend: { position: 'top' }, title: { display: true, text: 'So sánh Khen và Chê' } }
                     }
                 });
             }
@@ -378,8 +373,9 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom' }
-                    }
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } }
+                    },
+                    layout: { padding: 0 }
                 }
             });
             
@@ -393,7 +389,7 @@
         $('#predict-form').submit(function(e) {
             e.preventDefault();
             var resultDiv = $('#result');
-            resultDiv.html('<p class="loading-text">Đang phân tích...</p>');
+            resultDiv.html('<p class="loading-text"><i class="fas fa-spinner fa-spin"></i> Đang phân tích...</p>');
             $.ajax({ type: 'POST', url: '/predict', data: $(this).serialize(),
                 success: function(response) {
                     let sentimentClass = '';
@@ -402,7 +398,7 @@
                     else sentimentClass = 'sentiment-neutral';
                     resultDiv.html( `<div class="quick-review ${sentimentClass}">` + '<strong>Kết quả:</strong> ' + response.sentiment_type + '</div>');
                 },
-                error: function() { resultDiv.html('<div class="error">Có lỗi xảy ra. Vui lòng thử lại.</div>'); }
+                error: function() { resultDiv.html('<div class="error">Có lỗi xảy ra.</div>'); }
             });
         });
         
@@ -436,7 +432,7 @@
                                 topicAnalysisHtml += `<div class="topic-section"><h4 style="font-size: 18px; margin-bottom: 15px; color: var(--positive-color);"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4><ul class="suggestions-list">`;
                                 sortedStrengths.forEach(([topic, data]) => {
                                     let examplesHtml = data.examples.map(ex => `<li>"${ex}"</li>`).join('');
-                                    topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count strength-count">${data.count} lượt khen</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Một số ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
+                                    topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count strength-count">${data.count} khen</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
                                 });
                                 topicAnalysisHtml += '</ul></div>';
                             }
@@ -448,7 +444,7 @@
                                 topicAnalysisHtml += `<div class="topic-section" style="margin-top: 30px;"><h4 style="font-size: 18px; margin-bottom: 15px; color: var(--negative-color);"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4><ul class="suggestions-list">`;
                                 sortedSuggestions.forEach(([topic, data]) => {
                                     let examplesHtml = data.examples.map(ex => `<li>"${ex}"</li>`).join('');
-                                    topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count">${data.count} phàn nàn</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Một số ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
+                                    topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count">${data.count} phàn nàn</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
                                 });
                                 topicAnalysisHtml += '</ul></div>';
                             }
@@ -462,7 +458,7 @@
                                 <h2><i class="fas fa-chart-bar"></i> Đánh giá Tổng quan</h2>
                             </div>
                             <div class="summary-stats">
-                                <div class="stat-item"><h4>Trường</h4><p>Đại học Bình Dương</p></div>
+                                <div class="stat-item stat-school"><h4>Trường</h4><p>ĐH Bình Dương</p></div>
                                 <div class="stat-item"><h4>Tổng bình luận</h4><p>${response.total_reviews}</p></div>
                                 <div class="stat-item"><h4>Nhận xét chung</h4><p class="sentiment-badge">${response.avg_sentiment_type}</p></div>
                             </div>
@@ -508,7 +504,8 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            plugins: { legend: { position: 'bottom' } }
+                            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } },
+                            layout: { padding: 0 }
                         }
                     });
 
@@ -516,12 +513,12 @@
 
                     $('.filter-button').click(function() { $('.filter-button').removeClass('active'); $(this).addClass('active'); const selectedSentiment = $(this).data('filter'); if (selectedSentiment === 'all') { displayReviews(originalReviews); } else { const filteredReviews = originalReviews.filter(review => review.sentiment_type === selectedSentiment); displayReviews(filteredReviews); } });
                 },
-                error: function() { $('#reviews-result').html('<div class="card error-card"><i class="fas fa-exclamation-triangle"></i><h2>Lỗi</h2><p>Có lỗi xảy ra khi lấy bình luận. Vui lòng thử lại.</p></div>'); },
+                error: function() { $('#reviews-result').html('<div class="card error-card"><i class="fas fa-exclamation-triangle"></i><h2>Lỗi</h2><p>Có lỗi xảy ra khi lấy dữ liệu.</p></div>'); },
                 complete: function() { $('#loading').hide(); }
             });
         });
 
-        function displayReviews(reviews) { let reviewsHtml = ''; if (reviews.length === 0) { reviewsHtml = '<p class="no-reviews">Không có bình luận nào phù hợp.</p>'; } else { reviews.forEach(function(review) { let sentimentClass = ''; if (review.sentiment_type === 'Tích cực') sentimentClass = 'positive'; else if (review.sentiment_type === 'Tiêu cực') sentimentClass = 'negative'; else sentimentClass = 'neutral'; reviewsHtml += `<div class="review-item"><div class="review-header"><span class="review-author"><i class="fas fa-user"></i> ${review.author}</span><span class="review-time"><i class="fas fa-clock"></i> ${review.rtime}</span></div><div class="review-body"><p>${review.text}</p></div><div class="review-footer"><span class="sentiment-type ${sentimentClass}">${review.sentiment_type}</span></div></div>`; }); } $('#reviews-list').html(reviewsHtml); }
+        function displayReviews(reviews) { let reviewsHtml = ''; if (reviews.length === 0) { reviewsHtml = '<p class="no-reviews">Không có dữ liệu.</p>'; } else { reviews.forEach(function(review) { let sentimentClass = ''; if (review.sentiment_type === 'Tích cực') sentimentClass = 'positive'; else if (review.sentiment_type === 'Tiêu cực') sentimentClass = 'negative'; else sentimentClass = 'neutral'; reviewsHtml += `<div class="review-item"><div class="review-header"><span class="review-author"><i class="fas fa-user"></i> ${review.author}</span><span class="review-time"><i class="fas fa-clock"></i> ${review.rtime}</span></div><div class="review-body"><p>${review.text}</p></div><div class="review-footer"><span class="sentiment-type ${sentimentClass}">${review.sentiment_type}</span></div></div>`; }); } $('#reviews-list').html(reviewsHtml); }
 
         // --- EVENT DELEGATION CHO ACCORDION ---
         $('#reviews-result').on('click', '.suggestion-header', function() {

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trường Đại Học Bình Dương</title>
     <link rel="icon" type="image/png" href="/static/logo.png">
     <link rel="stylesheet" type="text/css" href="/static/styles1.css">
@@ -10,7 +12,49 @@
 </head>
 <body>
 
-<div class="header">
+<!-- MOBILE HEADER -->
+<div class="mobile-header-wrapper">
+    <div class="mobile-banner-area">
+        <img src="/static/logo2.png" alt="BDU Banner" class="banner-logo">
+        <img src="/static/qc1.png" alt="Tuyen Sinh Online" class="banner-qc">
+    </div>
+    
+    <!-- Thanh điều hướng màu xanh ở dưới -->
+    <div class="mobile-nav-bar">
+        <a href="#" class="mobile-login-btn btn"><i class="fas fa-user-circle"></i></a>
+        <button class="hamburger-btn" onclick="toggleMobileMenu()">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Mobile Menu Overlay -->
+<div class="mobile-menu-overlay" id="mobileMenuOverlay">
+    <div class="mobile-menu-container">
+        <div class="mobile-menu-header">
+            <h3>DANH MỤC</h3>
+            <button class="close-menu-btn" onclick="toggleMobileMenu()">&times;</button>
+        </div>
+        <div class="mobile-menu-list">
+            <div class="mobile-section-title">Hệ thống</div>
+            <a href="#">Trang Chủ</a>
+            <a href="#">Giới Thiệu</a>
+            <a href="#">Tuyển Sinh</a>
+            <a href="#">Tin Tức</a>
+            <a href="#">Sinh Viên</a>
+            
+            <div class="mobile-section-title">Tiện ích</div>
+            <a href="#">Đường Dây Nóng</a>
+            <a href="#">Thư Viện</a>
+            <a href="#">Cổng Sinh Viên</a>
+            <a href="#">Trang Đào Tạo</a>
+            <a href="#">Tuyển Dụng</a>
+        </div>
+    </div>
+</div>
+
+<!-- Desktop Header -->
+<div class="header desktop-only">
     <a href="#" class="btn analysis-btn-top">Đăng nhập<br>Phân Tích MXH<i class="fas fa-chart-line"></i></a>
     <div class="top-menu">
         <a href="#">ĐƯỜNG DÂY NÓNG</a>
@@ -56,14 +100,16 @@
     const images = document.querySelectorAll('.slider-image');
 
     function showNextImage() {
-        images[currentIndex].classList.remove('active');    
-        currentIndex = (currentIndex + 1) % images.length; 
-        images[currentIndex].classList.add('active');     
+        if(images.length > 0) {
+            images[currentIndex].classList.remove('active');    
+            currentIndex = (currentIndex + 1) % images.length; 
+            images[currentIndex].classList.add('active');     
+        }
     }
-
-    setInterval(showNextImage, 5000);
+    if(images.length > 0) setInterval(showNextImage, 5000);
 </script>
 
+<!-- Quick Buttons Area -->
 <div class="quick-buttons">
     <a href="#" class="quick-btn">PH CÀ MAU</a>
     <a href="#" class="quick-btn">TUYỂN SINH</a>
@@ -96,7 +142,11 @@
 </div>
 
 <script>
-    // === BẢO MẬT: Hàm lấy CSRF Token từ thẻ Meta ===
+    function toggleMobileMenu() {
+        const overlay = document.getElementById('mobileMenuOverlay');
+        overlay.classList.toggle('active');
+    }
+
     function getCsrfToken() {
         const tokenMeta = document.querySelector('meta[name="csrf-token"]');
         return tokenMeta ? tokenMeta.getAttribute('content') : '';
@@ -109,38 +159,19 @@
 
     document.getElementById('feedbackFormInline').addEventListener('submit', function(e) {
         e.preventDefault();
-        
         const nameInput = document.getElementById('nameInputInline');
         const feedbackInput = document.getElementById('feedbackInputInline');
-        
         const name = nameInput.value.trim();
         const feedback = feedbackInput.value.trim();
         
-        if (!name || !feedback) {
-            alert('Vui lòng nhập đầy đủ thông tin');
-            return;
-        }
-        
-        if (name.length > 50) {
-            alert('Tên không được quá 50 ký tự');
-            return;
-        }
-        
-        if (feedback.length > 500) {
-            alert('Nội dung góp ý không được quá 500 ký tự');
-            return;
-        }
+        if (!name || !feedback) { alert('Vui lòng nhập đầy đủ thông tin'); return; }
+        if (name.length > 50) { alert('Tên không được quá 50 ký tự'); return; }
+        if (feedback.length > 500) { alert('Nội dung góp ý không được quá 500 ký tự'); return; }
         
         fetch('/submit_feedback', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()
-            },
-            body: JSON.stringify({
-                name: name,
-                feedback: feedback
-            })
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+            body: JSON.stringify({ name: name, feedback: feedback })
         })
         .then(response => response.json())
         .then(data => {
@@ -148,17 +179,13 @@
                 alert('Cảm ơn bạn đã góp ý!');
                 nameInput.value = '';
                 feedbackInput.value = '';
-            } else {
-                alert(data.message);
-            }
+            } else { alert(data.message); }
         })
-        .catch(error => {
-            console.error('Lỗi:', error);
-            alert('Có lỗi xảy ra. Vui lòng thử lại.');
-        });
+        .catch(error => { console.error('Lỗi:', error); alert('Có lỗi xảy ra. Vui lòng thử lại.'); });
     });
 </script>
 
+<!-- LOGIN MODAL -->
 <div id="loginModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
@@ -166,14 +193,18 @@
         <form id="loginForm">
             <div class="form-group">
                 <label for="username">Tên đăng nhập:</label>
-                <input type="text" id="username" name="username" required>
+                <div class="input-group">
+                    <input type="text" id="username" name="username" required>
+                </div>
             </div>
-            <div class="form-group password-container">
+            <div class="form-group">
                 <label for="password">Mật khẩu:</label>
-                <input type="password" id="password" name="password" required>
-                <button type="button" class="password-toggle" onclick="togglePasswordVisibility()">
-                    <i class="fas fa-eye"></i>
-                </button>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" required>
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility()">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
             <button type="submit" class="login-btn">Đăng Nhập</button>
         </form>
@@ -183,55 +214,42 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const loginModal = document.getElementById('loginModal');
-        const predictBtn = document.querySelector('.btn');
+        const predictBtns = document.querySelectorAll('.analysis-btn-top, .mobile-login-btn'); 
         const closeBtn = document.querySelector('.close');
         const loginForm = document.getElementById('loginForm');
 
-        predictBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            loginModal.style.display = 'block';
+        predictBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginModal.style.display = 'block';
+            });
         });
 
-        closeBtn.addEventListener('click', function() {
-            loginModal.style.display = 'none';
-        });
+        closeBtn.addEventListener('click', function() { loginModal.style.display = 'none'; });
+        window.onclick = function(event) { if (event.target == loginModal) loginModal.style.display = "none"; }
 
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
             fetch('/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken()
-                },
-                body: JSON.stringify({
-                    username: username,
-                    password: password
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+                body: JSON.stringify({ username: username, password: password })
             })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') {
-                    window.location.href = '/predict';
-                } else {
-                    alert(data.message || 'Đăng nhập thất bại');
-                }
+                if (data.status === 'success') { window.location.href = '/predict'; } 
+                else { alert(data.message || 'Đăng nhập thất bại'); }
             })
-            .catch(error => {
-                console.error('Lỗi:', error);
-                alert('Có lỗi xảy ra. Vui lòng thử lại.');
-            });
+            .catch(error => { console.error('Lỗi:', error); alert('Có lỗi xảy ra. Vui lòng thử lại.'); });
         });
     });
 
     function togglePasswordVisibility() {
         const passwordInput = document.getElementById('password');
         const eyeIcon = document.querySelector('.password-toggle i');
-        
         if (passwordInput.type === 'password') {
             passwordInput.type = 'text';
             eyeIcon.classList.remove('fa-eye');
@@ -247,63 +265,31 @@
 <div class="footer">
     <div class="container">
         <div class="column">
-            <div class="title">
-                <i class="fas fa-home"></i>
-                <span>TRƯỜNG ĐẠI HỌC BÌNH DƯƠNG</span>
-            </div>
-            <p><i class="fas fa-map-marker-alt"></i> Địa chỉ: Số 504 Đại lộ Bình Dương, P. Phú Lợi, Thành phố Hồ Chí Minh.</p>
-            <p><i class="fas fa-phone-alt"></i> 0789 269 219 - 0274 6 511 756 - 0274 3 822 058</p>
-            <p><i class="fas fa-envelope"></i> info@bdu.edu.vn</p>
-            <p><i class="fas fa-globe"></i> <a href="https://bdu.edu.vn" target="_blank">https://bdu.edu.vn</a></p>
-            <hr>
-            <div class="title">
-                <i class="fas fa-home"></i>
-                <span>CƠ SỞ BẾN CÁT</span>
-            </div>
-            <p><i class="fas fa-map-marker-alt"></i> Địa chỉ: Ấp Kiến Điền, P. Long Nguyên, Thành phố Hồ Chí Minh.</p>
-            <p><i class="fas fa-phone-alt"></i> 0789 269 219 - 0274 6 511 756</p>
+            <div class="title"><i class="fas fa-home"></i><span>TRƯỜNG ĐẠI HỌC BÌNH DƯƠNG</span></div>
+            <p><i class="fas fa-map-marker-alt"></i> Số 504 Đại lộ Bình Dương, P. Phú Lợi, TP. Thủ Dầu Một.</p>
+            <p><i class="fas fa-phone-alt"></i> 0274 3 822 058</p>
+            <p><i class="fas fa-globe"></i> <a href="https://bdu.edu.vn" target="_blank">bdu.edu.vn</a></p>
         </div>
         <div class="column">
-            <div class="title">
-                <i class="fas fa-home"></i>
-                <span>PHÂN HIỆU CÀ MAU</span>
-            </div>
-            <p><i class="fas fa-map-marker-alt"></i> Địa chỉ: Số 3, Lê Thị Riêng, P. 5, Tp. Cà Mau, T. Cà Mau.</p>
-            <p><i class="fas fa-phone-alt"></i> 0971 936 219 – 0290 6 539 468</p>
-            <p><i class="fas fa-envelope"></i> tuyensinh.cm@bdu.edu.vn</p>
-            <p><i class="fas fa-globe"></i> <a href="https://camau.bdu.edu.vn" target="_blank">https://camau.bdu.edu.vn</a></p>
+            <div class="title"><i class="fas fa-home"></i><span>PHÂN HIỆU CÀ MAU</span></div>
+            <p><i class="fas fa-map-marker-alt"></i> Số 3, Lê Thị Riêng, P. 5, Tp. Cà Mau.</p>
+            <p><i class="fas fa-phone-alt"></i> 0290 6 539 468</p>
         </div>
         <div class="column">
-            <div class="section-title">
-                <i class="fas fa-chart-line"></i>
-                <span>TUYỂN SINH</span>
-            </div>
-            <p><a href="#">>> Tiến sĩ</a></p>
-            <p><a href="#">>> Thạc sĩ</a></p>
+            <div class="section-title"><i class="fas fa-graduation-cap"></i><span>TUYỂN SINH</span></div>
             <p><a href="#">>> Đại học chính quy</a></p>
-            <p><a href="#">>> Liên thông</a></p>
-            <p><a href="#">>> Văn bằng 2</a></p>
-            <p><a href="#">>> Vừa làm vừa học</a></p>
+            <p><a href="#">>> Liên thông & VB2</a></p>
+            <p><a href="#">>> Sau đại học</a></p>
         </div>
         <div class="column">
-            <div class="section-title">
-                <i class="fas fa-chart-line"></i>
-                <span>LIÊN KẾT</span>
-            </div>
-            <p><a href="#">>> Trang tuyển sinh</a></p>
+            <div class="section-title"><i class="fas fa-link"></i><span>LIÊN KẾT NHANH</span></div>
             <p><a href="#">>> Xét tuyển online</a></p>
-            <p><a href="#">>> Trang đào tạo</a></p>
-            <p><a href="#">>> Trang Sau đại học</a></p>
-            <p><a href="#">>> Trang Cà Mau</a></p>
-            <p><a href="#">>> Bộ Giáo dục và Đào tạo</a></p>
+            <p><a href="#">>> Tra cứu điểm</a></p>
+            <p><a href="#">>> Cổng thông tin</a></p>
         </div>
     </div>
-    <div class="bottom-bar">
-        © 2023 - Trường Đại học Bình Dương | All rights reserved.
-    </div>
-    <div class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'});">
-        <i class="fas fa-chevron-up"></i>
-    </div>
+    <div class="bottom-bar">© 2023 - Trường Đại học Bình Dương | All rights reserved.</div>
+    <div class="back-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'});"><i class="fas fa-chevron-up"></i></div>
 </div>
 </body>
 </html>

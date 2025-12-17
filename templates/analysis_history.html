@@ -3,15 +3,13 @@
 <head>
     <title>Lịch sử Phân tích</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/static/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="stylesheet" href="/static/styles_shared.css">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
-        /* Ẩn cột ID nhưng vẫn giữ data attribute */
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -44,8 +42,8 @@
                         {% for report in reports %}
                         <!-- Giữ data-row-id để xử lý logic xóa -->
                         <tr data-row-id="{{ report.id }}" class="data-row">
-                            <td>{{ report.total_reviews }}</td>
-                            <td>
+                            <td data-label="Tổng số bình luận">{{ report.total_reviews }}</td>
+                            <td data-label="Nhận xét chung">
                                 {% if report.avg_sentiment_type == 'Tích cực' %}
                                     <span style="color: #28a745; font-weight: bold;">{{ report.avg_sentiment_type }}</span>
                                 {% elif report.avg_sentiment_type == 'Tiêu cực' %}
@@ -54,8 +52,8 @@
                                     <span style="color: #ffc107; font-weight: bold;">{{ report.avg_sentiment_type }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ report.created_at }}</td>
-                            <td>
+                            <td data-label="Ngày phân tích">{{ report.created_at }}</td>
+                            <td data-label="Hành động">
                                 <div class="action-buttons">
                                     <a href="/view_report/{{ report.id }}" class="btn btn-success" title="Xem chi tiết">
                                         <i class="fas fa-eye"></i> Xem
@@ -119,47 +117,44 @@
         const totalRows = allRows.length;
         const totalPages = Math.ceil(totalRows / ROWS_PER_PAGE) || 1;
 
-        // Đảm bảo trang hiện tại hợp lệ
         if (currentPage > totalPages) currentPage = totalPages;
         if (currentPage < 1) currentPage = 1;
 
-        // Tính toán chỉ số bắt đầu và kết thúc
         const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
         const endIndex = startIndex + ROWS_PER_PAGE;
 
-        // Ẩn tất cả, chỉ hiện các hàng trong phạm vi
         allRows.forEach((row, index) => {
             if (index >= startIndex && index < endIndex) {
-                row.style.display = 'table-row';
+                 // Logic hiển thị tương thích responsive
+                if (window.innerWidth > 768) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'block';
+                }
             } else {
                 row.style.display = 'none';
             }
         });
 
-        // Cập nhật thông tin hiển thị
         document.getElementById('displayCurrentPage').textContent = currentPage;
         document.getElementById('displayTotalPages').textContent = totalPages;
         document.getElementById('pageJumpInput').max = totalPages;
         document.getElementById('pageJumpInput').value = currentPage;
 
-        // Cập nhật trạng thái nút
         document.getElementById('prevBtn').disabled = (currentPage === 1);
         document.getElementById('nextBtn').disabled = (currentPage === totalPages);
         
-        // Ẩn phân trang nếu không có dữ liệu
         if (totalRows === 0) {
             document.querySelector('.styled-table tbody').innerHTML = '<tr><td colspan="4" style="text-align:center">Chưa có dữ liệu phân tích nào.</td></tr>';
             document.getElementById('paginationControls').style.display = 'none';
         }
     }
 
-    // Chuyển trang (Next/Prev)
     function changePage(direction) {
         currentPage += direction;
         renderTable();
     }
 
-    // Nhảy đến trang cụ thể
     function jumpToPage() {
         const input = document.getElementById('pageJumpInput');
         let page = parseInt(input.value);
@@ -174,11 +169,8 @@
         }
     }
 
-    // Xử lý sự kiện Xóa
     function setupDeleteButtons() {
-        // Sử dụng Event Delegation để không bị lỗi khi DOM thay đổi
         document.getElementById('tableBody').addEventListener('click', function(e) {
-            // Tìm nút xóa gần nhất (để xử lý click vào icon bên trong nút)
             const btn = e.target.closest('.btn-danger');
             if (!btn) return;
 
@@ -194,11 +186,9 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Xóa hàng khỏi DOM
                         const row = document.querySelector(`tr[data-row-id='${reportId}']`);
                         if (row) {
                             row.remove();
-                            // Cập nhật lại danh sách và render lại phân trang
                             updateRowsList();
                             renderTable();
                         }
@@ -214,6 +204,9 @@
             }
         });
     }
+
+    // Lắng nghe resize để cập nhật display
+    window.addEventListener('resize', renderTable);
     </script>
 </body>
 </html>
