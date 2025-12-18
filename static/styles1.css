@@ -25,6 +25,7 @@ body {
     color: yellow;
     text-decoration: none;
     font-size: 14px;
+    font-weight: bold;
 }
 
 .top-menu a:hover {
@@ -73,6 +74,7 @@ body {
 
 .main-menu a {
     color: #333;
+    font-size: 14px;
     text-decoration: none;
     margin: 0 10px;
     font-weight: bold;
@@ -87,11 +89,13 @@ body {
 .slider {
     position: relative;
     width: 100%;
+    max-width: 1250px;
     height: 490px;
     max-height: 490px;
     overflow: hidden;
-    margin: 20px 0;
-    margin-top: 60px; 
+    margin: 60px auto 20px auto;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 .slider-image {
@@ -114,6 +118,7 @@ body {
     align-items: stretch; 
     gap: 5px; 
     margin: 20px auto;
+    margin-bottom: 70px;
     max-width: 1200px;
     padding: 0 10px;
 }
