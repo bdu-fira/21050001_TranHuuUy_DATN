@@ -35,7 +35,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 ### 4. Tải Word2Vec được đào tạo trước
-Tải và giải nén [vi_word2vec.rar](https://drive.google.com/file/d/1RXS8WRIPhHU2q6gTSq387pG5gywfQfdP/view) vào thư mục **Data**
+Tải và giải nén [vi_word2vec.rar](https://drive.google.com/file/d/1RXS8WRIPhHU2q6gTSq387pG5gywfQfdP/view) vào thư mục **Data** (nếu chưa có)
 - vi_word2vec.txt: Word2Vec được đào tạo trước với kích thước nhúng là 100 từ [PhoW2V](https://github.com/datquocnguyen/PhoW2V)
 
 ## Cấu Hình (Configuration)
@@ -201,12 +201,12 @@ python main.py
 | Thư mục | Mục Đích |
 |---------|---------|
 | `/` | Thư mục gốc chứa main.py |
-| `/configs/` | File cấu hình ứng dụng |
-| `/Crawl_Data/` | Script cào dữ liệu và xử lý dữ liệu thô |
-| `/Data/` | Dữ liệu huấn luyện và chạy ứng dụng |
-| `/templates/` | HTML templates cho Flask |
-| `/static/` | CSS, hình ảnh |
-| `/logs/` | Các file mô hình đã huấn luyện |
+| `/configs/` | Chứa các file cấu hình ứng dụng |
+| `/Crawl_Data/` | Chứa các script cào dữ liệu và xử lý dữ liệu thô |
+| `/Data/` | Chứa dữ liệu huấn luyện và chạy ứng dụng |
+| `/templates/` | Chứa các HTML templates cho Flask |
+| `/static/` | Chứa các file CSS và hình ảnh |
+| `/logs/` | Chứa các file mô hình đã huấn luyện |
 
 ## Hỗ Trợ (Support)
 
