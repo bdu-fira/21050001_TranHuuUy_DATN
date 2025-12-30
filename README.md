@@ -56,6 +56,9 @@ SEARCH_KEYWORDS=DaiHocBinhDuong,BDU,Đại học Bình Dương
 
 # ID địa điểm trên Google Maps (trường Đại học Bình Dương)
 GMAP_PLACE_ID=ChIJncGVJL7RdDERwv9mRNl32a8
+
+# Admin username mặc định là 'admin' và mật khẩu lấy từ biến môi trường dưới đây
+ADMIN_PASSWORD=admin123
 ```
 
 ### 2.  Chuẩn Bị File Cấu Hình

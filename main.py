@@ -6,6 +6,7 @@ from flask_talisman import Talisman
 import sqlite3
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 import torch
 import utils
 import re
@@ -15,6 +16,8 @@ import numpy as np
 import functools
 from underthesea import word_tokenize
 from wordcloud import WordCloud
+import matplotlib
+matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn3
 from io import BytesIO
@@ -25,9 +28,13 @@ from get_gmap_reviews import get_all_google_maps_reviews
 from get_tiktok_comments import get_tiktok_comments
 import asyncio
 from torch.nn.utils.rnn import pad_sequence
+import threading
+import uuid
+import time
 
 load_dotenv()
 
+# --- KIỂM TRA MÔI TRƯỜNG ---
 if not os.getenv('GMAP_PLACE_ID'):
     print("LỖI CRITICAL: Không tìm thấy biến 'GMAP_PLACE_ID' trong file .env!")
     print("Vui lòng thêm dòng: GMAP_PLACE_ID=YourPlaceID vào file .env")
@@ -37,35 +44,39 @@ app = Flask(__name__)
 
 # --- CẤU HÌNH BẢO MẬT ---
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'default_secret_key_if_env_missing')
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-# Cấu hình Cookie an toàn (Session Security)
+# Cấu hình Cookie an toàn
 app.config.update(
-    SESSION_COOKIE_HTTPONLY=True, # JavaScript không thể đọc cookie (chống XSS lấy cookie)
-    SESSION_COOKIE_SECURE=False,  # Đặt là True nếu chạy HTTPS (production), False nếu chạy localhost
-    SESSION_COOKIE_SAMESITE='Lax',# Chống CSRF cơ bản
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=False, # True nếu production (HTTPS)
+    SESSION_COOKIE_SAMESITE='Lax',
 )
 
 csrf = CSRFProtect(app)
 
-# Rate Limiting (Chống Spam)
+# Rate Limiting
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["200 per day", "50 per hour"], # Mặc định cho mọi trang
+    default_limits=["200 per day", "50 per hour"],
     storage_uri="memory://"
 )
 
-# Kích hoạt Secure Headers (Talisman)
-# content_security_policy=None: Tạm tắt CSP chặt chẽ để tránh lỗi load script/ảnh từ nguồn ngoài (như Chart.js, FontAwesome)
-# force_https=False: Tạm tắt để chạy localhost (Đặt True khi deploy có chứng chỉ SSL)
+# Secure Headers
 Talisman(app, content_security_policy=None, force_https=False) 
 
-# --- GLOBAL VARIABLES FOR MODEL LOADING ---
+# --- GLOBAL VARIABLES ---
 global_model = None
 global_vocab = None
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 32
 
+# Biến lưu trạng thái các tác vụ chạy ngầm
+# Cấu trúc: {'task_id': {'status': 'processing' | 'completed' | 'failed', 'data': ...}}
+TASKS = {}
+
+# Regex patterns
 REPEATED_CHARS_PATTERN = re.compile(r'(.)\1{1,}')
 SPACES_PATTERN = re.compile(r'([.,!?])')
 CLEAN_SPACES_PATTERN = re.compile(r'\s+')
@@ -74,7 +85,6 @@ SPECIAL_CHARS_PATTERN = re.compile(r'\b\d+\b|\b\w{1}\b|[^\w\s]')
 # --- CÁC HÀM HỖ TRỢ (HELPER FUNCTIONS) ---
 def load_stopwords(filepath):
     stopwords = set()
-    # Các từ phủ định KHÔNG NÊN coi là stopword trong phân tích cảm xúc
     keep_words = {"a ha", "biết bao", "bỏ mẹ", "cha chả", "chao ôi", "chu cha", "chui cha", "chết nỗi", "chết thật", "chết tiệt", "cóc khô",
                 "dễ sợ", "nức nở", "oai oái", "oái", "phỉ phui", "quá chừng", "quá lắm", "quá sá", "quá thể", "quá trời", "quá xá", "quá đỗi",
                 "sa sả", "than ôi", "thương ôi", "toé khói", "trời đất ơi", "úi", "úi chà", "úi dào", "xiết bao", "á", "á à", "ái", "ái chà", 
@@ -94,10 +104,6 @@ def load_stopwords(filepath):
 stopwords = load_stopwords('./data/vietnamese-stopwords.txt')
 
 def init_model():
-    """
-    Khởi tạo Model và Vocabulary MỘT LẦN DUY NHẤT khi chạy server.
-    Giúp tăng tốc độ vì không phải load lại file model nặng.
-    """
     global global_model, global_vocab
     print(f"--- Đang khởi tạo Model trên thiết bị: {device} ---")
     try:
@@ -106,7 +112,7 @@ def init_model():
         
         global_vocab = torch.load(config["vocab_fpath"])
         global_model = torch.load(config["model_fpath"], map_location=device)
-        global_model.eval() # Chuyển sang chế độ đánh giá (inference mode)
+        global_model.eval()
         print("--- Đã tải xong Model và Vocabulary thành công! ---")
     except Exception as e:
         print(f"!!! LỖI KHI TẢI MODEL: {e}")
@@ -117,7 +123,6 @@ def preprocess_text_for_charts(text):
     if text:
         text = word_tokenize(text, format='text')
         text = text.lower()
-        
     return text
 
 def generate_wordcloud(text):
@@ -128,6 +133,8 @@ def generate_wordcloud(text):
     if not words_list: return ""
     word_counts = Counter(words_list)
     clean_counts = {word.replace('_', ' '): count for word, count in word_counts.items()}
+    
+    # Tạo wordcloud
     wordcloud = WordCloud(width=800, height=400, background_color='white', colormap='viridis').generate_from_frequencies(clean_counts)
     img = BytesIO()
     wordcloud.to_image().save(img, format='PNG')
@@ -140,7 +147,8 @@ def generate_ngram_chart(ngram_counts, sentiment_type, n=2):
     counts = list(ngram_counts.values())
     ngrams_str = [' '.join(ngram) for ngram in ngrams_list]
 
-    plt.figure(figsize=(10, 5))
+    # Sử dụng Figure riêng để thread-safe
+    fig = plt.figure(figsize=(10, 5))
     plt.bar(ngrams_str, counts, color='skyblue')
     plt.xlabel(f'{n}-grams')
     plt.ylabel('Tần suất')
@@ -152,11 +160,11 @@ def generate_ngram_chart(ngram_counts, sentiment_type, n=2):
     plt.savefig(img, format='PNG')
     img.seek(0)
     img_base64 = base64.b64encode(img.getvalue()).decode()
-    plt.close()
+    plt.close(fig) # Đóng figure cụ thể
     return img_base64
 
 def generate_venn_diagram(positive_words, neutral_words, negative_words):
-    plt.figure(figsize=(8, 8))
+    fig = plt.figure(figsize=(8, 8))
     try:
         venn3([set(positive_words), set(neutral_words), set(negative_words)], ('Tích cực', 'Trung tính', 'Tiêu cực'))
         plt.title('Biểu đồ Venn so sánh từ khóa')
@@ -164,10 +172,10 @@ def generate_venn_diagram(positive_words, neutral_words, negative_words):
         plt.savefig(img, format='PNG')
         img.seek(0)
         img_base64 = base64.b64encode(img.getvalue()).decode()
-        plt.close()
+        plt.close(fig)
         return img_base64
     except Exception:
-        plt.close()
+        plt.close(fig)
         return ""
 
 def analyze_improvement_topics(negative_reviews):
@@ -209,7 +217,6 @@ def analyze_strengths(positive_reviews):
 # --- CÁC HÀM XỬ LÝ TEXT ---
 def remove_repeated_chars(text):
     normalized_text = REPEATED_CHARS_PATTERN.sub(r'\1', text)
-    # print("- Sau khi chuẩn hóa chữ lặp:", normalized_text) # Optimized: Comment out
     return normalized_text
 
 def normalized(text):
@@ -217,11 +224,6 @@ def normalized(text):
     text_cleaned = CLEAN_SPACES_PATTERN.sub(' ', text_with_spaces).strip()
     text_lowercase = text_cleaned.lower()
     text_normalized = remove_repeated_chars(text_lowercase)
-    
-    # Optimized: Comment out prints
-    # print("- Sau khi thêm khoảng trắng vào dấu câu:", text_with_spaces)
-    # print("- Sau khi chuẩn hóa khoảng trắng:", text_cleaned)
-    # print("- Sau khi chuyển thành chữ thường:", text_lowercase)
     return text_normalized
 
 # Cache replacements
@@ -247,30 +249,19 @@ def load_replacements(filename):
     return cached_replacements
 
 def replace_text(input_text, replacements):
-    # print("\nCác bước xử lý văn bản:") # Optimized
-    # print("- Văn bản gốc:", input_text) # Optimized
-    
     cleaned_text = normalized(input_text)
     words = [replacements.get(word, word) for word in cleaned_text.split()]
     text_replaced = ' '.join(words)
-    # print("- Sau khi thay thế từ viết tắt:", text_replaced) # Optimized
-    
     text_cleaned = SPECIAL_CHARS_PATTERN.sub(' ', text_replaced)
-    # print("- Sau khi loại bỏ ký tự đặc biệt, số và từ 1 ký tự:", text_cleaned) # Optimized
     return text_cleaned
-
 
 # --- HÀM DỰ ĐOÁN ---
 def predict_single_text(sentence):
-    """Dùng cho route /predict (xử lý 1 câu)"""
     if not sentence or sentence.strip() == "":
         return None, {}
-
-    # Sử dụng global_vocab và global_model
     corpus = [sentence]
-    # Chuyển text thành tensor
     tensor = global_vocab.corpus_to_tensor(corpus)[0].to(device)
-    tensor = tensor.unsqueeze(1) # [seq_len, 1]
+    tensor = tensor.unsqueeze(1)
     length_tensor = torch.LongTensor([len(tensor)])
     
     with torch.no_grad():
@@ -289,159 +280,53 @@ def predict_single_text(sentence):
     }
     return sentiment_type, sentiment_probs
 
-
-# --- DATABASE INIT ---
-def init_database():
-    conn = sqlite3.connect('feedback.db')
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, feedback TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-    conn.commit()
-    conn.close()
-
-def init_analysis_reports_database():
-    conn = sqlite3.connect('analysis_reports.db')
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, place_name TEXT NOT NULL, total_reviews INTEGER, positive_count INTEGER, neutral_count INTEGER, negative_count INTEGER, avg_sentiment_type TEXT, positive_wordcloud TEXT, neutral_wordcloud TEXT, negative_wordcloud TEXT, positive_bigram_chart TEXT, neutral_bigram_chart TEXT, negative_bigram_chart TEXT, venn_diagram TEXT, improvement_suggestions TEXT, strengths_to_promote TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-    conn.commit()
-    conn.close()
-
-def init_users_database():
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL)''')
-    # Chỉ tạo user mặc định nếu bảng trống (tránh reset password mỗi lần restart)
-    cursor.execute('SELECT count(*) FROM users')
-    if cursor.fetchone()[0] == 0:
-        admin_pass = os.getenv('ADMIN_PASSWORD', 'admin123') 
-        hashed_password = generate_password_hash(admin_pass)
-        sample_users = [('admin', hashed_password)]
-        cursor.executemany('INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)', sample_users)
-        print("--- Đã tạo tài khoản admin mặc định ---")
-    conn.commit()
-    conn.close()
-
-def nocache(view):
-    @functools.wraps(view)
-    def no_cache(*args, **kwargs):
-        response = make_response(view(*args, **kwargs))
-        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
-        return response
-    return no_cache
-
-# --- ROUTES ---
-@app.route('/')
-def index(): return render_template('index.html')
-
-@app.route('/submit_feedback', methods=['POST'])
-@limiter.limit("5 per minute")  # Chỉ cho phép gửi 5 góp ý mỗi phút từ 1 IP
-def submit_feedback():
-    data = request.json
-    name = data.get('name', '').strip()
-    feedback = data.get('feedback', '').strip()
-    if not name or not feedback: return jsonify({'status': 'error', 'message': 'Vui lòng nhập đầy đủ thông tin'}), 400
-    if len(name) > 30: return jsonify({'status': 'error', 'message': 'Tên quá dài'}), 400
-    if len(feedback) > 500: return jsonify({'status': 'error', 'message': 'Nội dung quá dài'}), 400
-    try:
-        conn = sqlite3.connect('feedback.db')
-        cursor = conn.cursor()
-        cursor.execute('INSERT INTO feedbacks (name, feedback, created_at) VALUES (?, ?, ?)', (name, feedback, datetime.now()))
-        conn.commit()
-        conn.close()
-        return jsonify({'status': 'success', 'message': 'Góp ý đã được ghi nhận'}), 200
-    except sqlite3.Error as e: return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/view_feedbacks')
-@nocache
-def view_feedbacks():
-    if not session.get('logged_in'): return redirect('/')
-    conn = sqlite3.connect('feedback.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM feedbacks ORDER BY created_at DESC LIMIT 100')
-    feedbacks = cursor.fetchall()
-    conn.close()
-    feedback_list = [{'id': f[0], 'name': f[1], 'feedback': f[2], 'created_at': datetime.strptime(f[3], '%Y-%m-%d %H:%M:%S.%f').strftime('%d/%m/%Y')} for f in feedbacks]
-    return render_template('view_feedbacks.html', feedbacks=feedback_list)
-
-@app.route('/login', methods=['POST'])
-@limiter.limit("5 per minute") # Chống Brute-force mật khẩu
-def login():
-    data = request.get_json()
-    username, password = data.get('username'), data.get('password')
-    conn = sqlite3.connect('users.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
-    user_record = cursor.fetchone()
-    conn.close()
-    if user_record and check_password_hash(user_record[0], password):
-        session['logged_in'] = True
-        session['username'] = username
-        return jsonify({'status': 'success'})
-    return jsonify({'status': 'error', 'message': 'Tên đăng nhập hoặc mật khẩu không đúng'})
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect('/')
-
-@app.route('/predict', methods=['GET', 'POST'])
-@limiter.limit("10 per minute") # Giới hạn request AI để tránh treo server
-@nocache
-def predict_page():
-    if not session.get('logged_in'): return redirect('/')
-    if request.method == 'GET':
-        report_dict = None
+# --- BACKGROUND TASK (XỬ LÝ ĐA LUỒNG) ---
+def background_scraping_task(task_id, app_context):
+    print(f"--- [Thread] Bắt đầu Task {task_id} ---")
+    with app_context:
         try:
-            conn = sqlite3.connect('analysis_reports.db')
-            conn.row_factory = sqlite3.Row 
-            cursor = conn.cursor()
-            cursor.execute('SELECT * FROM reports ORDER BY created_at DESC LIMIT 1')
-            report_data = cursor.fetchone()
-            conn.close()
-            if report_data:
-                report_dict = dict(report_data)
-                for key in ['improvement_suggestions', 'strengths_to_promote']:
-                    if report_dict.get(key):
-                        try: report_dict[key] = json.loads(report_dict[key])
-                        except: report_dict[key] = {}
-        except Exception: pass
-        return render_template('predict.html', latest_report=report_dict)
-    
-    elif request.method == 'POST':
-        # Phân tích nhanh 1 câu (Dùng global model)
-        replacements = load_replacements('./data/acronym.txt')
-        input_text = request.form.get('text', '')
-        corrected_text = replace_text(input_text, replacements)
-        sentiment_type, sentiment_probs = predict_single_text(corrected_text)
-        sentiment_score = sentiment_probs.get(sentiment_type, 0)
-        return jsonify({'processed_text': corrected_text, 'sentiment_score': sentiment_score, 'sentiment_type': sentiment_type, 'sentiment_probabilities': sentiment_probs})
-
-@app.route('/get_reviews', methods=['GET', 'POST'])
-@nocache
-def get_reviews():
-    if not session.get('logged_in'): return jsonify({'error': 'Unauthorized'}), 401
-
-    if request.method == 'POST':
-        try:
+            # 1. Cào Google Maps
             reviews_data = get_all_google_maps_reviews()
-            if reviews_data is None: reviews_data = {'place_name': 'Địa điểm không xác định', 'reviews': []}
+            if reviews_data is None: 
+                reviews_data = {'place_name': 'Địa điểm không xác định', 'reviews': []}
+            
             place_name = reviews_data.get('place_name')
             google_reviews = reviews_data.get('reviews', [])
             
+            # 2. Lấy Feedback DB
             try:
                 conn = sqlite3.connect('feedback.db')
                 cursor = conn.cursor()
                 cursor.execute('SELECT name, feedback, created_at FROM feedbacks ORDER BY created_at DESC')
                 db_feedbacks = [{'author': f[0], 'text': f[1], 'rating': 0, 'rtime': datetime.strptime(f[2], '%Y-%m-%d %H:%M:%S.%f').strftime('%d/%m/%Y')} for f in cursor.fetchall()]
                 conn.close()
-            except: db_feedbacks = []
+            except Exception as e:
+                print(f"[Thread] Lỗi DB Feedback: {e}")
+                db_feedbacks = []
             
-            tiktok_comments = asyncio.run(get_tiktok_comments())
-            tiktok_reviews = [{'author': c['user'], 'text': c['comment'], 'rating': 0, 'rtime': c['create_time']} for c in tiktok_comments[1:]]
+            # 3. Cào TikTok
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+                # Chạy hàm async trong loop mới
+                tiktok_comments = loop.run_until_complete(get_tiktok_comments())
+                loop.close()
+                
+                if tiktok_comments:
+                    tiktok_reviews = [{'author': c['user'], 'text': c['comment'], 'rating': 0, 'rtime': c['create_time']} for c in tiktok_comments[1:]]
+                else:
+                    tiktok_reviews = []
+            except Exception as e:
+                print(f"[Thread] Lỗi TikTok: {e}")
+                import traceback
+                traceback.print_exc() # In lỗi chi tiết ra terminal để debug
+                tiktok_reviews = []
 
+            # 4. Tổng hợp
             all_reviews = db_feedbacks + google_reviews + tiktok_reviews
             replacements = load_replacements('./data/acronym.txt')
             
-            # --- TIỀN XỬ LÝ & CHUẨN BỊ BATCH ---
             texts_to_predict = []
             valid_review_indices = []
 
@@ -459,7 +344,7 @@ def get_reviews():
             neutral_count = 0
             negative_count = 0
 
-            # --- BATCH PREDICTION ---
+            # 5. Batch Prediction
             if texts_to_predict:
                 id2sentiment = {0: 'Tiêu cực', 1: 'Trung tính', 2: 'Tích cực'}
                 total_samples = len(texts_to_predict)
@@ -496,13 +381,14 @@ def get_reviews():
                         })
 
             if not analyzed_reviews:
-                return jsonify({'error': 'Không tìm thấy bình luận nào có thể phân tích', 'place_name': place_name}), 404
+                TASKS[task_id] = {'status': 'failed', 'message': 'Không tìm thấy bình luận nào có thể phân tích', 'place_name': place_name}
+                return
             
+            # 6. Tạo biểu đồ
             total_reviews_count = len(analyzed_reviews)
             counts = {'Tích cực': positive_count, 'Trung tính': neutral_count, 'Tiêu cực': negative_count}
             avg_sentiment_type = max(counts, key=counts.get) if total_reviews_count > 0 else 'Không xác định'
 
-            # Xử lý text
             positive_text = " ".join([r['processed_text'] for r in analyzed_reviews if r['sentiment_type'] == 'Tích cực'])
             neutral_text = " ".join([r['processed_text'] for r in analyzed_reviews if r['sentiment_type'] == 'Trung tính'])
             negative_text = " ".join([r['processed_text'] for r in analyzed_reviews if r['sentiment_type'] == 'Tiêu cực'])
@@ -510,58 +396,226 @@ def get_reviews():
             improvement_suggestions = analyze_improvement_topics([r for r in analyzed_reviews if r['sentiment_type'] == 'Tiêu cực'])
             strengths_to_promote = analyze_strengths([r for r in analyzed_reviews if r['sentiment_type'] == 'Tích cực'])
             
-            # Wordcloud
             positive_wordcloud = generate_wordcloud(positive_text)
             neutral_wordcloud = generate_wordcloud(neutral_text)
             negative_wordcloud = generate_wordcloud(negative_text)
 
-            # Lấy danh sách từ (có gạch dưới) để lọc stopwords và vẽ Venn
             p_words = [w for w in preprocess_text_for_charts(positive_text).split() if w not in stopwords]
             n_words = [w for w in preprocess_text_for_charts(neutral_text).split() if w not in stopwords]
             neg_words = [w for w in preprocess_text_for_charts(negative_text).split() if w not in stopwords]
 
-            # Hàm hỗ trợ tách từ ghép thành từ đơn (bỏ gạch dưới) để N-gram chỉ có 2 từ đơn
             def flatten_tokens(tokens):
                 flat = []
                 for t in tokens:
-                    # Thay thế _ bằng khoảng trắng rồi tách ra
                     flat.extend(t.replace('_', ' ').split())
                 return flat
 
-            # Tạo list từ đơn cho biểu đồ N-gram
             p_words_flat = flatten_tokens(p_words)
             n_words_flat = flatten_tokens(n_words)
             neg_words_flat = flatten_tokens(neg_words)
             
-            # Tạo biểu đồ dùng list từ đơn (kết quả sẽ là "từ1 từ2" thay vì "từ1_từ2 từ3")
             positive_bigram_chart = generate_ngram_chart(dict(Counter(list(ngrams(p_words_flat, 2))).most_common(10)), 'Tích cực')
             neutral_bigram_chart = generate_ngram_chart(dict(Counter(list(ngrams(n_words_flat, 2))).most_common(10)), 'Trung tính')
             negative_bigram_chart = generate_ngram_chart(dict(Counter(list(ngrams(neg_words_flat, 2))).most_common(10)), 'Tiêu cực')
             
-            # Venn diagram dùng p_words gốc (từ ghép) để hiển thị ý nghĩa đầy đủ hơn
             venn_diagram = generate_venn_diagram(p_words, n_words, neg_words)
 
+            # 7. Lưu báo cáo vào DB (Cần connection riêng)
             try:
                 conn = sqlite3.connect('analysis_reports.db')
                 cursor = conn.cursor()
                 cursor.execute('''INSERT INTO reports (place_name, total_reviews, positive_count, neutral_count, negative_count, avg_sentiment_type, positive_wordcloud, neutral_wordcloud, negative_wordcloud, positive_bigram_chart, neutral_bigram_chart, negative_bigram_chart, venn_diagram, improvement_suggestions, strengths_to_promote, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (place_name, total_reviews_count, positive_count, neutral_count, negative_count, avg_sentiment_type, positive_wordcloud, neutral_wordcloud, negative_wordcloud, positive_bigram_chart, neutral_bigram_chart, negative_bigram_chart, venn_diagram, json.dumps(improvement_suggestions, ensure_ascii=False), json.dumps(strengths_to_promote, ensure_ascii=False), datetime.now()))
                 conn.commit()
                 conn.close()
-            except Exception as e: print(f"Lỗi lưu báo cáo: {e}")
+            except Exception as e: 
+                print(f"[Thread] Lỗi lưu báo cáo: {e}")
 
-            return jsonify({
+            # 8. Cập nhật kết quả vào biến TASKS
+            result_data = {
                 'positive_wordcloud': positive_wordcloud, 'neutral_wordcloud': neutral_wordcloud, 'negative_wordcloud': negative_wordcloud,
                 'positive_bigram_chart': positive_bigram_chart, 'neutral_bigram_chart': neutral_bigram_chart, 'negative_bigram_chart': negative_bigram_chart,
                 'venn_diagram': venn_diagram, 'place_name': place_name, 'reviews': analyzed_reviews,
                 'avg_sentiment_type': avg_sentiment_type, 'total_reviews': total_reviews_count,
                 'positive_count': positive_count, 'neutral_count': neutral_count, 'negative_count': negative_count,
                 'improvement_suggestions': improvement_suggestions, 'strengths_to_promote': strengths_to_promote
-            })
+            }
+
+            TASKS[task_id] = {'status': 'completed', 'data': result_data}
+            print(f"--- [Thread] Task {task_id} hoàn thành ---")
 
         except Exception as e:
             import traceback; traceback.print_exc()
-            return jsonify({'error': f"Lỗi server: {str(e)}", 'place_name': 'Địa điểm không xác định'}), 500
+            TASKS[task_id] = {'status': 'failed', 'message': f"Lỗi server: {str(e)}"}
+
+# --- DATABASE INIT ---
+def init_database():
+    conn = sqlite3.connect('feedback.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, feedback TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    conn.commit()
+    conn.close()
+
+def init_analysis_reports_database():
+    conn = sqlite3.connect('analysis_reports.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, place_name TEXT NOT NULL, total_reviews INTEGER, positive_count INTEGER, neutral_count INTEGER, negative_count INTEGER, avg_sentiment_type TEXT, positive_wordcloud TEXT, neutral_wordcloud TEXT, negative_wordcloud TEXT, positive_bigram_chart TEXT, neutral_bigram_chart TEXT, negative_bigram_chart TEXT, venn_diagram TEXT, improvement_suggestions TEXT, strengths_to_promote TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    conn.commit()
+    conn.close()
+
+def init_users_database():
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT NOT NULL UNIQUE, password TEXT NOT NULL)''')
+    cursor.execute('SELECT count(*) FROM users')
+    if cursor.fetchone()[0] == 0:
+        admin_pass = os.getenv('ADMIN_PASSWORD') 
+        hashed_password = generate_password_hash(admin_pass)
+        sample_users = [('admin', hashed_password)]
+        cursor.executemany('INSERT OR IGNORE INTO users (username, password) VALUES (?, ?)', sample_users)
+        print("--- Đã tạo tài khoản admin mặc định ---")
+    conn.commit()
+    conn.close()
+
+def nocache(view):
+    @functools.wraps(view)
+    def no_cache(*args, **kwargs):
+        response = make_response(view(*args, **kwargs))
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+        return response
+    return no_cache
+
+# --- ROUTES ---
+@app.route('/')
+def index(): return render_template('index.html')
+
+@app.route('/submit_feedback', methods=['POST'])
+@limiter.limit("5 per minute") 
+def submit_feedback():
+    data = request.json
+    name = data.get('name', '').strip()
+    feedback = data.get('feedback', '').strip()
+    if not name or not feedback: return jsonify({'status': 'error', 'message': 'Vui lòng nhập đầy đủ thông tin'}), 400
+    if len(name) > 30: return jsonify({'status': 'error', 'message': 'Tên quá dài'}), 400
+    if len(feedback) > 500: return jsonify({'status': 'error', 'message': 'Nội dung quá dài'}), 400
+    try:
+        conn = sqlite3.connect('feedback.db')
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO feedbacks (name, feedback, created_at) VALUES (?, ?, ?)', (name, feedback, datetime.now()))
+        conn.commit()
+        conn.close()
+        return jsonify({'status': 'success', 'message': 'Góp ý đã được ghi nhận'}), 200
+    except sqlite3.Error as e: return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/view_feedbacks')
+@nocache
+def view_feedbacks():
+    if not session.get('logged_in'): return redirect('/')
+    conn = sqlite3.connect('feedback.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM feedbacks ORDER BY created_at DESC LIMIT 100')
+    feedbacks = cursor.fetchall()
+    conn.close()
+    feedback_list = [{'id': f[0], 'name': f[1], 'feedback': f[2], 'created_at': datetime.strptime(f[3], '%Y-%m-%d %H:%M:%S.%f').strftime('%d/%m/%Y')} for f in feedbacks]
+    return render_template('view_feedbacks.html', feedbacks=feedback_list)
+
+@app.route('/login', methods=['POST'])
+@limiter.limit("5 per minute")
+def login():
+    data = request.get_json()
+    username, password = data.get('username'), data.get('password')
+    conn = sqlite3.connect('users.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
+    user_record = cursor.fetchone()
+    conn.close()
+    if user_record and check_password_hash(user_record[0], password):
+        session['logged_in'] = True
+        session['username'] = username
+        return jsonify({'status': 'success'})
+    return jsonify({'status': 'error', 'message': 'Tên đăng nhập hoặc mật khẩu không đúng'})
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
+
+@app.route('/predict', methods=['GET', 'POST'])
+@limiter.limit("10 per minute")
+@nocache
+def predict_page():
+    if not session.get('logged_in'): return redirect('/')
+    if request.method == 'GET':
+        report_dict = None
+        try:
+            conn = sqlite3.connect('analysis_reports.db')
+            conn.row_factory = sqlite3.Row 
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM reports ORDER BY created_at DESC LIMIT 1')
+            report_data = cursor.fetchone()
+            conn.close()
+            if report_data:
+                report_dict = dict(report_data)
+                for key in ['improvement_suggestions', 'strengths_to_promote']:
+                    if report_dict.get(key):
+                        try: report_dict[key] = json.loads(report_dict[key])
+                        except: report_dict[key] = {}
+        except Exception: pass
+        return render_template('predict.html', latest_report=report_dict)
+    
+    elif request.method == 'POST':
+        replacements = load_replacements('./data/acronym.txt')
+        input_text = request.form.get('text', '')
+        corrected_text = replace_text(input_text, replacements)
+        sentiment_type, sentiment_probs = predict_single_text(corrected_text)
+        sentiment_score = sentiment_probs.get(sentiment_type, 0)
+        return jsonify({'processed_text': corrected_text, 'sentiment_score': sentiment_score, 'sentiment_type': sentiment_type, 'sentiment_probabilities': sentiment_probs})
+
+# --- ROUTE XỬ LÝ GET REVIEWS (ASYNC POLLING) ---
+@app.route('/get_reviews', methods=['GET', 'POST'])
+@nocache
+def get_reviews():
+    if not session.get('logged_in'): return jsonify({'error': 'Unauthorized'}), 401
+
+    if request.method == 'POST':
+        # 1. Tạo Task ID
+        task_id = str(uuid.uuid4())
+        TASKS[task_id] = {'status': 'processing'}
+        
+        # 2. Chạy Thread ngầm
+        # Truyền app_context để thread truy cập được config của Flask
+        thread = threading.Thread(target=background_scraping_task, args=(task_id, app.app_context()))
+        thread.daemon = True 
+        thread.start()
+        
+        # 3. Trả về ngay lập tức
+        return jsonify({'status': 'processing', 'task_id': task_id}), 202
+
     return render_template('reviews.html')
+
+@app.route('/check_status/<task_id>')
+@nocache
+@limiter.exempt
+def check_status(task_id):
+    """API để frontend polling kiểm tra tiến độ"""
+    task = TASKS.get(task_id)
+    
+    if not task:
+        return jsonify({'status': 'not_found'}), 404
+    
+    if task['status'] == 'processing':
+        return jsonify({'status': 'processing'})
+    
+    if task['status'] == 'failed':
+        msg = task.get('message', 'Unknown error')
+        del TASKS[task_id] # Xóa task
+        return jsonify({'status': 'failed', 'message': msg})
+        
+    if task['status'] == 'completed':
+        data = task['data']
+        del TASKS[task_id] # Xóa task sau khi trả về
+        return jsonify({'status': 'completed', 'result': data})
+        
+    return jsonify({'status': 'unknown'}), 500
 
 @app.route('/analysis_history')
 @nocache
@@ -614,4 +668,8 @@ init_users_database()
 init_model()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Tắt debug mode trong môi trường production (mặc định False)
+    # Lấy PORT từ biến môi trường (mặc định 5000)
+    port = int(os.environ.get('PORT', 5000))
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False') == 'True'
+    app.run(host='0.0.0.0', port=port, debug=debug_mode)

@@ -300,13 +300,11 @@ header h1 {
     
     .styled-table td {
         padding: 12px 15px;
-        text-align: right;
-        position: relative;
-        padding-left: 40%;
         border-bottom: 1px solid #eee;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        text-align: right;
     }
 
     .styled-table td:last-child {
@@ -316,12 +314,12 @@ header h1 {
     /* Tạo label giả từ thuộc tính data-label */
     .styled-table td::before {
         content: attr(data-label);
-        position: absolute;
-        left: 15px;
-        width: 35%;
         font-weight: bold;
         text-align: left;
         color: var(--text-light-color);
+        flex-shrink: 0;
+        max-width: 60%;
+        padding-right: 10px;
     }
 
     /* Xử lý riêng cho cột nội dung dài (view_feedbacks) */
@@ -336,6 +334,7 @@ header h1 {
         width: 100%;
         margin-bottom: 5px;
         left: 0;
+        max-width: 100%;
     }
 
     /* Xử lý nút bấm trên mobile */
