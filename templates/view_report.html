@@ -9,44 +9,20 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <!-- CSS TÙY CHỈNH RIÊNG CHO MOBILE CỦA TRANG NÀY -->
     <style>
+        /* Ghi đè riêng cho nút Back trên mobile của trang này */
         @media (max-width: 768px) {
-            .stat-school {
-                display: none;
-            }
-
             .header-actions {
                 justify-content: center !important; 
-                width: 100%;
-                background-color: transparent !important;
-                padding: 0 !important;
             }
 
             .header-actions .header-btn {
-                flex: none !important;
+                flex: 0 0 auto !important;
                 width: auto !important;
-                display: inline-flex !important;
-                align-items: center;
-                justify-content: center;
-                
-                background-color: #e8f0fe !important;
-                color: #1674E6 !important;
+                padding: 8px 25px !important;
                 border-radius: 20px !important;
-                padding: 8px 20px !important;
-                font-weight: bold;
                 font-size: 14px !important;
-                white-space: nowrap;
                 margin: 0 !important;
-            }
-            
-            .header-actions .header-btn i {
-                margin-right: 8px !important;
-                font-size: 14px !important;
-            }
-
-            .main-container {
-                padding: 10px !important;
             }
         }
     </style>
@@ -64,10 +40,9 @@
         </div>
     </header>
 
-    <!-- Bố cục chính cho trang chi tiết -->
     <div class="main-container">
         <div class="content">
-            <!-- Thẻ Đánh giá Tổng quan -->
+            <!-- 1. Đánh giá Tổng quan -->
             <div class="card summary-card">
                 <div class="card-header">
                     <h2><i class="fas fa-chart-bar"></i> Đánh giá Tổng quan <small>({{ report.created_at }})</small></h2>
@@ -87,33 +62,70 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 2. Chỉ số Sức khỏe Thương hiệu -->
+            <div class="metrics-grid">
+                <!-- Net Sentiment Score -->
+                <div class="metric-card">
+                    <h3><i class="fas fa-heartbeat"></i> Net Sentiment Score (NSS)</h3>
+                    <div class="metric-value 
+                        {% if report.nss > 0 %}nss-positive
+                        {% elif report.nss < 0 %}nss-negative
+                        {% else %}nss-neutral{% endif %}">
+                        {{ report.nss }}
+                    </div>
+                </div>
+
+                <!-- Tỷ lệ Tiêu cực -->
+                <div class="metric-card">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Tỷ lệ Tiêu cực</h3>
+                    <div class="metric-value 
+                        {% if report.negative_ratio >= 20 %}ratio-danger
+                        {% elif report.negative_ratio >= 10 %}ratio-warning
+                        {% else %}ratio-safe{% endif %}">
+                        {{ report.negative_ratio }}%
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Biểu đồ Xu hướng -->
+            {% if report.sentiment_trend %}
+            <div class="card chart-card full-width">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> Xu hướng Cảm xúc theo Thời gian</h3>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 350px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             
-            <!-- === CARD PHÂN TÍCH CHỦ ĐỀ (GỘP) === -->
+            <!-- 4. Phân tích Chủ đề -->
             {% if report.strengths_to_promote or report.improvement_suggestions %}
             <div class="card chart-card full-width">
                 <div class="card-header">
-                    <h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Chê</h3>
+                    <h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Phàn nàn</h3>
                 </div>
                 <div class="card-body">
-                    <!-- Biểu đồ cột so sánh -->
                     <div class="chart-container" id="topic-chart-container" style="margin-bottom: 30px; display: none; height: 300px;">
                         <canvas id="topicComparisonChart"></canvas>
                     </div>
 
-                    <!-- Điểm cần phát huy -->
                     {% if report.strengths_to_promote %}
                     <div class="topic-section">
-                        <h4 style="font-size: 18px; margin-bottom: 15px; color: var(--positive-color);"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4>
+                        <h4 style="font-size: 18px; margin-bottom: 15px; color: #28a745;"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4>
                         <ul class="suggestions-list">
                             {% for topic, data in report.strengths_to_promote.items()|sort(attribute='1.count', reverse=True) %}
-                            {% if data.count >= 2 %}
+                            {% if data.count >= 5 %}
                             <li class="suggestion-item">
                                 <div class="suggestion-header">
                                     <span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span>
                                     <span class="suggestion-count strength-count">{{ data.count }} lượt khen</span>
                                 </div>
                                 <div class="suggestion-examples" style="display: none;">
-                                    <p><strong>Một số ví dụ:</strong></p>
+                                    <p><strong>Ví dụ:</strong></p>
                                     <ul>
                                         {% for ex in data.examples %}
                                         <li>"{{ ex }}"</li>
@@ -127,20 +139,19 @@
                     </div>
                     {% endif %}
 
-                    <!-- Gợi ý Cải thiện -->
                     {% if report.improvement_suggestions %}
                     <div class="topic-section" style="margin-top: 30px;">
-                         <h4 style="font-size: 18px; margin-bottom: 15px; color: var(--negative-color);"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4>
+                         <h4 style="font-size: 18px; margin-bottom: 15px; color: #dc3545;"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4>
                         <ul class="suggestions-list">
                             {% for topic, data in report.improvement_suggestions.items()|sort(attribute='1.count', reverse=True) %}
-                            {% if data.count >= 3 %}
+                            {% if data.count >= 5 %}
                             <li class="suggestion-item">
                                 <div class="suggestion-header">
                                     <span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span>
                                     <span class="suggestion-count">{{ data.count }} phàn nàn</span>
                                 </div>
                                 <div class="suggestion-examples" style="display: none;">
-                                    <p><strong>Một số ví dụ:</strong></p>
+                                    <p><strong>Ví dụ:</strong></p>
                                     <ul>
                                         {% for ex in data.examples %}
                                         <li>"{{ ex }}"</li>
@@ -157,9 +168,8 @@
             </div>
             {% endif %}
 
-            <!-- Lưới chứa các biểu đồ -->
+            <!-- 5. Các biểu đồ khác (Pie, Venn, Wordcloud) -->
             <div class="charts-grid">
-                <!-- Biểu đồ tròn -->
                 <div class="card chart-card">
                     <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Tỷ lệ Cảm xúc</h3></div>
                     <div class="card-body chart-container pie-chart-wrapper">
@@ -167,7 +177,6 @@
                     </div>
                 </div>
 
-                <!-- Biểu đồ Venn -->
                 <div class="card chart-card">
                     <div class="card-header"><h3><i class="fas fa-circle-notch"></i> Biểu đồ Venn</h3></div>
                     <div class="card-body">
@@ -175,7 +184,6 @@
                     </div>
                 </div>
 
-                <!-- Word Cloud -->
                 <div class="card chart-card full-width">
                     <div class="card-header"><h3><i class="fas fa-cloud"></i> Word Cloud</h3></div>
                     <div class="card-body wordcloud-container">
@@ -194,7 +202,6 @@
                     </div>
                 </div>
 
-                <!-- Phân tích N-grams -->
                 <div class="card chart-card full-width">
                     <div class="card-header">
                         <h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3>
@@ -217,18 +224,14 @@
 
     <script>
     $(document).ready(function() {
-        // --- KHỞI TẠO BIỂU ĐỒ TRÒN ---
+        // --- 1. BIỂU ĐỒ TRÒN ---
         var ctx = document.getElementById('sentimentPieChart').getContext('2d');
         new Chart(ctx, {
             type: 'pie',
             data: {
                 labels: ['Tích cực', 'Trung tính', 'Tiêu cực'],
                 datasets: [{
-                    data: [
-                        {{ report.positive_count }},
-                        {{ report.neutral_count }},
-                        {{ report.negative_count }}
-                    ],
+                    data: [{{ report.positive_count }}, {{ report.neutral_count }}, {{ report.negative_count }}],
                     backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
                     borderColor: '#fff',
                     borderWidth: 2
@@ -237,87 +240,71 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { boxWidth: 12, padding: 10 }
-                    }
-                },
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } },
                 layout: { padding: 0 }
             }
         });
 
-        // --- JAVASCRIPT CHO ACCORDION GỢI Ý ---
+        // --- 2. ACCORDION ---
         $('.suggestion-header').on('click', function() {
             $(this).siblings('.suggestion-examples').slideToggle('fast');
         });
 
-        // --- LOGIC MỚI CHO BIỂU ĐỒ SO SÁNH CHỦ ĐỀ ---
+        // --- 3. BIỂU ĐỒ SO SÁNH CHỦ ĐỀ ---
         function createTopicComparisonChart() {
             const strengthsData = {{ report.strengths_to_promote | tojson | safe }};
             const suggestionsData = {{ report.improvement_suggestions | tojson | safe }};
-            
             if (!strengthsData || !suggestionsData) return;
     
-            const suggestionTopics = Object.keys(suggestionsData);
-            const commonTopics = Object.keys(strengthsData).filter(topic => suggestionTopics.includes(topic));
+            const commonTopics = Object.keys(strengthsData).filter(topic => Object.keys(suggestionsData).includes(topic));
     
             if (commonTopics.length > 0) {
-                $('#topic-chart-container').show(); // Show the chart container
-    
-                const labels = commonTopics;
+                $('#topic-chart-container').show();
                 const strengthCounts = commonTopics.map(topic => strengthsData[topic].count);
                 const suggestionCounts = commonTopics.map(topic => suggestionsData[topic].count);
     
-                const ctx = document.getElementById('topicComparisonChart').getContext('2d');
-                new Chart(ctx, {
+                new Chart(document.getElementById('topicComparisonChart').getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: commonTopics,
                         datasets: [
-                            {
-                                label: 'Lượt khen',
-                                data: strengthCounts,
-                                backgroundColor: '#28a745',
-                                borderColor: '#218838',
-                                borderWidth: 1
-                            },
-                            {
-                                label: 'Phàn nàn',
-                                data: suggestionCounts,
-                                backgroundColor: '#dc3545',
-                                borderColor: '#c82333',
-                                borderWidth: 1
-                            }
+                            { label: 'Lượt khen', data: strengthCounts, backgroundColor: '#28a745', borderColor: '#218838', borderWidth: 1 },
+                            { label: 'Phàn nàn', data: suggestionCounts, backgroundColor: '#dc3545', borderColor: '#c82333', borderWidth: 1 }
                         ]
                     },
                     options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Số lượng'
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                position: 'top',
-                            },
-                            title: {
-                                display: true,
-                                text: 'So sánh Khen và Chê'
-                            }
-                        }
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } } },
+                        plugins: { legend: { position: 'top' }, title: { display: true, text: 'So sánh Khen và Chê' } }
                     }
                 });
             }
         }
-    
         createTopicComparisonChart();
+
+        // --- 4. BIỂU ĐỒ XU HƯỚNG (LINE CHART) ---
+        {% if report.sentiment_trend %}
+        var ctxTrend = document.getElementById('trendChart').getContext('2d');
+        var trendData = {{ report.sentiment_trend | tojson | safe }};
+        
+        new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: trendData.labels,
+                datasets: [
+                    { label: 'Tích cực', data: trendData.pos, borderColor: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.1)', borderWidth: 2, tension: 0.3, fill: true },
+                    { label: 'Tiêu cực', data: trendData.neg, borderColor: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.1)', borderWidth: 2, tension: 0.3, fill: true },
+                    { label: 'Trung tính', data: trendData.neu, borderColor: '#ffc107', borderWidth: 1, borderDash: [5, 5], tension: 0.3, fill: false }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { title: { display: true, text: 'Diễn biến số lượng bình luận theo tháng' } },
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } }, x: { title: { display: true, text: 'Thời gian' } } }
+            }
+        });
+        {% endif %}
     });
     </script>
 </body>

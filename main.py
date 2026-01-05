@@ -5,6 +5,7 @@ from flask_limiter.util import get_remote_address
 from flask_talisman import Talisman
 import sqlite3
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 import torch
@@ -18,7 +19,7 @@ from underthesea import word_tokenize
 from wordcloud import WordCloud
 import matplotlib
 matplotlib.use('Agg') 
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure 
 from matplotlib_venn import venn3
 from io import BytesIO
 import base64
@@ -31,6 +32,7 @@ from torch.nn.utils.rnn import pad_sequence
 import threading
 import uuid
 import time
+import sys
 
 load_dotenv()
 
@@ -73,7 +75,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 32
 
 # Biến lưu trạng thái các tác vụ chạy ngầm
-# Cấu trúc: {'task_id': {'status': 'processing' | 'completed' | 'failed', 'data': ...}}
 TASKS = {}
 
 # Regex patterns
@@ -134,7 +135,6 @@ def generate_wordcloud(text):
     word_counts = Counter(words_list)
     clean_counts = {word.replace('_', ' '): count for word, count in word_counts.items()}
     
-    # Tạo wordcloud
     wordcloud = WordCloud(width=800, height=400, background_color='white', colormap='viridis').generate_from_frequencies(clean_counts)
     img = BytesIO()
     wordcloud.to_image().save(img, format='PNG')
@@ -147,35 +147,40 @@ def generate_ngram_chart(ngram_counts, sentiment_type, n=2):
     counts = list(ngram_counts.values())
     ngrams_str = [' '.join(ngram) for ngram in ngrams_list]
 
-    # Sử dụng Figure riêng để thread-safe
-    fig = plt.figure(figsize=(10, 5))
-    plt.bar(ngrams_str, counts, color='skyblue')
-    plt.xlabel(f'{n}-grams')
-    plt.ylabel('Tần suất')
-    plt.title(f'Tần suất {n}-grams trong bình luận {sentiment_type}')
-    plt.xticks(rotation=45, ha='right')
-    plt.tight_layout()
+    fig = Figure(figsize=(10, 5)) 
+    ax = fig.subplots()
+    
+    ax.bar(ngrams_str, counts, color='skyblue')
+    ax.set_xlabel(f'{n}-grams')
+    ax.set_ylabel('Tần suất')
+    ax.set_title(f'Tần suất {n}-grams trong bình luận {sentiment_type}')
+    fig.autofmt_xdate(rotation=45) 
+    
+    fig.tight_layout()
 
     img = BytesIO()
-    plt.savefig(img, format='PNG')
+    fig.savefig(img, format='PNG')
     img.seek(0)
     img_base64 = base64.b64encode(img.getvalue()).decode()
-    plt.close(fig) # Đóng figure cụ thể
     return img_base64
 
 def generate_venn_diagram(positive_words, neutral_words, negative_words):
-    fig = plt.figure(figsize=(8, 8))
+    fig = Figure(figsize=(8, 8))
+    ax = fig.subplots()
+    
     try:
-        venn3([set(positive_words), set(neutral_words), set(negative_words)], ('Tích cực', 'Trung tính', 'Tiêu cực'))
-        plt.title('Biểu đồ Venn so sánh từ khóa')
+        venn3([set(positive_words), set(neutral_words), set(negative_words)], 
+              set_labels=('Tích cực', 'Trung tính', 'Tiêu cực'), 
+              ax=ax)
+        ax.set_title('Biểu đồ Venn so sánh từ khóa')
+        
         img = BytesIO()
-        plt.savefig(img, format='PNG')
+        fig.savefig(img, format='PNG')
         img.seek(0)
         img_base64 = base64.b64encode(img.getvalue()).decode()
-        plt.close(fig)
         return img_base64
-    except Exception:
-        plt.close(fig)
+    except Exception as e:
+        print(f"Lỗi vẽ Venn: {e}")
         return ""
 
 def analyze_improvement_topics(negative_reviews):
@@ -226,7 +231,6 @@ def normalized(text):
     text_normalized = remove_repeated_chars(text_lowercase)
     return text_normalized
 
-# Cache replacements
 cached_replacements = {}
 def load_replacements(filename):
     global cached_replacements
@@ -255,6 +259,70 @@ def replace_text(input_text, replacements):
     text_cleaned = SPECIAL_CHARS_PATTERN.sub(' ', text_replaced)
     return text_cleaned
 
+# --- HÀM XỬ LÝ THỜI GIAN CỦA GGMAP ---
+def parse_relative_time(text):
+    """
+    Chuyển đổi chuỗi thời gian tương đối (ví dụ: '5 năm trước') thành chuỗi 'MM/YYYY'.
+    """
+    if not text: return datetime.now().strftime("%m/%Y")
+    
+    hien_tai = datetime.now()
+    text_lower = text.lower().strip()
+    
+    # Từ điển số
+    tu_dien_so = {
+        'một': 1, 'hai': 2, 'ba': 3, 'bốn': 4, 
+        'sáu': 6, 'bảy': 7, 'tám': 8, 'chín': 9, 'mười': 10,
+        'chục': 10
+    }
+    
+    so_luong = 0
+    
+    # Ưu tiên 1: Tìm số dạng ký tự (1, 2, 10...)
+    tim_so_ky_tu = re.search(r'(\d+)', text_lower)
+    if tim_so_ky_tu:
+        so_luong = int(tim_so_ky_tu.group(1))
+    else:
+        # Ưu tiên 2: Xử lý đặc biệt "năm năm", "năm tháng"
+        if 'năm năm' in text_lower:
+            so_luong = 5
+        elif 'năm' in text_lower and any(u in text_lower for u in ['tháng', 'tuần', 'ngày']):
+            so_luong = 5
+        else:
+            # Ưu tiên 3: Tìm số chữ
+            for chu, so in tu_dien_so.items():
+                if re.search(r'\b' + chu + r'\b', text_lower):
+                    so_luong = so
+                    break
+        
+        # Ưu tiên 4: Mặc định là 1 (vd: "năm trước", "tháng trước")
+        if so_luong == 0:
+            so_luong = 1
+
+    # Tính toán
+    try:
+        if 'tuần' in text_lower:
+            ngay_ket_qua = hien_tai - relativedelta(weeks=so_luong)
+        elif 'tháng' in text_lower:
+            ngay_ket_qua = hien_tai - relativedelta(months=so_luong)
+        elif 'năm' in text_lower:
+            ngay_ket_qua = hien_tai - relativedelta(years=so_luong)
+        elif 'ngày' in text_lower:
+            ngay_ket_qua = hien_tai - relativedelta(days=so_luong)
+        elif 'giờ' in text_lower or 'phút' in text_lower or 'giây' in text_lower or 'vừa xong' in text_lower:
+            ngay_ket_qua = hien_tai # Các mốc rất gần coi như tháng hiện tại
+        else:
+            # Trường hợp rtime đã là ngày tháng (vd: 12/05/2023) hoặc format lạ
+            try:
+                # Thử format dd/mm/yyyy
+                return datetime.strptime(text, '%d/%m/%Y').strftime("%m/%Y")
+            except:
+                return hien_tai.strftime("%m/%Y")
+            
+        return ngay_ket_qua.strftime("%m/%Y")
+    except Exception:
+        return hien_tai.strftime("%m/%Y")
+
 # --- HÀM DỰ ĐOÁN ---
 def predict_single_text(sentence):
     if not sentence or sentence.strip() == "":
@@ -282,10 +350,11 @@ def predict_single_text(sentence):
 
 # --- BACKGROUND TASK (XỬ LÝ ĐA LUỒNG) ---
 def background_scraping_task(task_id, app_context):
-    print(f"--- [Thread] Bắt đầu Task {task_id} ---")
+    print(f"--- [Thread] Bắt đầu Task {task_id} ---", flush=True)
     with app_context:
         try:
             # 1. Cào Google Maps
+            print("[Thread] Đang cào Google Maps...", flush=True)
             reviews_data = get_all_google_maps_reviews()
             if reviews_data is None: 
                 reviews_data = {'place_name': 'Địa điểm không xác định', 'reviews': []}
@@ -294,6 +363,7 @@ def background_scraping_task(task_id, app_context):
             google_reviews = reviews_data.get('reviews', [])
             
             # 2. Lấy Feedback DB
+            print("[Thread] Đang lấy Feedback DB...", flush=True)
             try:
                 conn = sqlite3.connect('feedback.db')
                 cursor = conn.cursor()
@@ -301,10 +371,11 @@ def background_scraping_task(task_id, app_context):
                 db_feedbacks = [{'author': f[0], 'text': f[1], 'rating': 0, 'rtime': datetime.strptime(f[2], '%Y-%m-%d %H:%M:%S.%f').strftime('%d/%m/%Y')} for f in cursor.fetchall()]
                 conn.close()
             except Exception as e:
-                print(f"[Thread] Lỗi DB Feedback: {e}")
+                print(f"[Thread] Lỗi DB Feedback: {e}", flush=True)
                 db_feedbacks = []
             
             # 3. Cào TikTok
+            print("[Thread] Đang cào TikTok...", flush=True)
             try:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
@@ -318,13 +389,14 @@ def background_scraping_task(task_id, app_context):
                 else:
                     tiktok_reviews = []
             except Exception as e:
-                print(f"[Thread] Lỗi TikTok: {e}")
+                print(f"[Thread] Lỗi TikTok: {e}", flush=True)
                 import traceback
-                traceback.print_exc() # In lỗi chi tiết ra terminal để debug
+                traceback.print_exc() 
                 tiktok_reviews = []
 
             # 4. Tổng hợp
             all_reviews = db_feedbacks + google_reviews + tiktok_reviews
+            print(f"[Thread] Tổng hợp được {len(all_reviews)} reviews. Đang tiền xử lý...", flush=True)
             replacements = load_replacements('./data/acronym.txt')
             
             texts_to_predict = []
@@ -346,10 +418,12 @@ def background_scraping_task(task_id, app_context):
 
             # 5. Batch Prediction
             if texts_to_predict:
+                print(f"[Thread] Đang dự đoán cảm xúc cho {len(texts_to_predict)} câu...", flush=True)
                 id2sentiment = {0: 'Tiêu cực', 1: 'Trung tính', 2: 'Tích cực'}
                 total_samples = len(texts_to_predict)
                 for i in range(0, total_samples, BATCH_SIZE):
                     batch_texts = texts_to_predict[i : i + BATCH_SIZE]
+                    # Tokenize
                     batch_tensors = global_vocab.corpus_to_tensor(batch_texts)
                     text_lengths = torch.LongTensor([len(t) for t in batch_tensors])
                     padded_input = pad_sequence(batch_tensors, padding_value=global_vocab["<pad>"]).to(device)
@@ -384,11 +458,58 @@ def background_scraping_task(task_id, app_context):
                 TASKS[task_id] = {'status': 'failed', 'message': 'Không tìm thấy bình luận nào có thể phân tích', 'place_name': place_name}
                 return
             
-            # 6. Tạo biểu đồ
+            print("[Thread] Dự đoán xong. Đang tính toán thống kê...", flush=True)
+            # 6. Tính toán Chỉ số Brand Health và Trend
             total_reviews_count = len(analyzed_reviews)
             counts = {'Tích cực': positive_count, 'Trung tính': neutral_count, 'Tiêu cực': negative_count}
             avg_sentiment_type = max(counts, key=counts.get) if total_reviews_count > 0 else 'Không xác định'
 
+            # --- A. TÍNH CHỈ SỐ SỨC KHỎE THƯƠNG HIỆU ---
+            if total_reviews_count > 0:
+                # Net Sentiment Score (NSS) = (Pos - Neg) / Total
+                nss = (positive_count - negative_count) / total_reviews_count
+                nss = round(nss, 2)
+                
+                # Tỷ lệ tiêu cực = (Neg / Total) * 100
+                negative_ratio = (negative_count / total_reviews_count) * 100
+                negative_ratio = round(negative_ratio, 1)
+            else:
+                nss = 0
+                negative_ratio = 0
+
+            # --- B. XỬ LÝ DỮ LIỆU BIỂU ĐỒ XU HƯỚNG (TEMPORAL TREND) ---
+            trend_data = {} # { "MM/YYYY": { "pos": 0, "neu": 0, "neg": 0 } }
+            
+            for review in analyzed_reviews:
+                raw_time = review.get('rtime', '')
+                month_year = parse_relative_time(raw_time)
+                
+                if month_year not in trend_data:
+                    trend_data[month_year] = {"pos": 0, "neu": 0, "neg": 0}
+                
+                s_type = review['sentiment_type']
+                if s_type == 'Tích cực': trend_data[month_year]["pos"] += 1
+                elif s_type == 'Trung tính': trend_data[month_year]["neu"] += 1
+                elif s_type == 'Tiêu cực': trend_data[month_year]["neg"] += 1
+
+            # Sắp xếp trend_data theo thời gian
+            def parse_date_key(key):
+                try:
+                    return datetime.strptime(key, "%m/%Y")
+                except:
+                    return datetime.min 
+            
+            sorted_trend_keys = sorted(trend_data.keys(), key=parse_date_key)
+            
+            final_trend = {
+                "labels": sorted_trend_keys,
+                "pos": [trend_data[k]["pos"] for k in sorted_trend_keys],
+                "neu": [trend_data[k]["neu"] for k in sorted_trend_keys],
+                "neg": [trend_data[k]["neg"] for k in sorted_trend_keys]
+            }
+
+            # 7. Tạo biểu đồ và phân tích text
+            print("[Thread] Đang tạo biểu đồ (Matplotlib)...", flush=True)
             positive_text = " ".join([r['processed_text'] for r in analyzed_reviews if r['sentiment_type'] == 'Tích cực'])
             neutral_text = " ".join([r['processed_text'] for r in analyzed_reviews if r['sentiment_type'] == 'Trung tính'])
             negative_text = " ".join([r['processed_text'] for r in analyzed_reviews if r['sentiment_type'] == 'Tiêu cực'])
@@ -414,34 +535,51 @@ def background_scraping_task(task_id, app_context):
             n_words_flat = flatten_tokens(n_words)
             neg_words_flat = flatten_tokens(neg_words)
             
+            # Gọi hàm vẽ biểu đồ
             positive_bigram_chart = generate_ngram_chart(dict(Counter(list(ngrams(p_words_flat, 2))).most_common(10)), 'Tích cực')
             neutral_bigram_chart = generate_ngram_chart(dict(Counter(list(ngrams(n_words_flat, 2))).most_common(10)), 'Trung tính')
             negative_bigram_chart = generate_ngram_chart(dict(Counter(list(ngrams(neg_words_flat, 2))).most_common(10)), 'Tiêu cực')
             
             venn_diagram = generate_venn_diagram(p_words, n_words, neg_words)
 
-            # 7. Lưu báo cáo vào DB (Cần connection riêng)
+            # 8. Lưu báo cáo vào DB
+            print("[Thread] Đang lưu vào DB...", flush=True)
             try:
                 conn = sqlite3.connect('analysis_reports.db')
                 cursor = conn.cursor()
-                cursor.execute('''INSERT INTO reports (place_name, total_reviews, positive_count, neutral_count, negative_count, avg_sentiment_type, positive_wordcloud, neutral_wordcloud, negative_wordcloud, positive_bigram_chart, neutral_bigram_chart, negative_bigram_chart, venn_diagram, improvement_suggestions, strengths_to_promote, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (place_name, total_reviews_count, positive_count, neutral_count, negative_count, avg_sentiment_type, positive_wordcloud, neutral_wordcloud, negative_wordcloud, positive_bigram_chart, neutral_bigram_chart, negative_bigram_chart, venn_diagram, json.dumps(improvement_suggestions, ensure_ascii=False), json.dumps(strengths_to_promote, ensure_ascii=False), datetime.now()))
+                cursor.execute('''INSERT INTO reports (
+                    place_name, total_reviews, positive_count, neutral_count, negative_count, avg_sentiment_type, 
+                    positive_wordcloud, neutral_wordcloud, negative_wordcloud, 
+                    positive_bigram_chart, neutral_bigram_chart, negative_bigram_chart, 
+                    venn_diagram, improvement_suggestions, strengths_to_promote, 
+                    nss, negative_ratio, sentiment_trend,
+                    created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', (
+                    place_name, total_reviews_count, positive_count, neutral_count, negative_count, avg_sentiment_type, 
+                    positive_wordcloud, neutral_wordcloud, negative_wordcloud, 
+                    positive_bigram_chart, neutral_bigram_chart, negative_bigram_chart, 
+                    venn_diagram, json.dumps(improvement_suggestions, ensure_ascii=False), json.dumps(strengths_to_promote, ensure_ascii=False), 
+                    nss, negative_ratio, json.dumps(final_trend),
+                    datetime.now()
+                ))
                 conn.commit()
                 conn.close()
             except Exception as e: 
-                print(f"[Thread] Lỗi lưu báo cáo: {e}")
+                print(f"[Thread] Lỗi lưu báo cáo: {e}", flush=True)
 
-            # 8. Cập nhật kết quả vào biến TASKS
+            # 9. Cập nhật kết quả vào biến TASKS
             result_data = {
                 'positive_wordcloud': positive_wordcloud, 'neutral_wordcloud': neutral_wordcloud, 'negative_wordcloud': negative_wordcloud,
                 'positive_bigram_chart': positive_bigram_chart, 'neutral_bigram_chart': neutral_bigram_chart, 'negative_bigram_chart': negative_bigram_chart,
                 'venn_diagram': venn_diagram, 'place_name': place_name, 'reviews': analyzed_reviews,
                 'avg_sentiment_type': avg_sentiment_type, 'total_reviews': total_reviews_count,
                 'positive_count': positive_count, 'neutral_count': neutral_count, 'negative_count': negative_count,
-                'improvement_suggestions': improvement_suggestions, 'strengths_to_promote': strengths_to_promote
+                'improvement_suggestions': improvement_suggestions, 'strengths_to_promote': strengths_to_promote,
+                'nss': nss, 'negative_ratio': negative_ratio, 'sentiment_trend': final_trend
             }
 
             TASKS[task_id] = {'status': 'completed', 'data': result_data}
-            print(f"--- [Thread] Task {task_id} hoàn thành ---")
+            print(f"--- [Thread] Task {task_id} hoàn thành ---", flush=True)
 
         except Exception as e:
             import traceback; traceback.print_exc()
@@ -458,7 +596,28 @@ def init_database():
 def init_analysis_reports_database():
     conn = sqlite3.connect('analysis_reports.db')
     cursor = conn.cursor()
-    cursor.execute('''CREATE TABLE IF NOT EXISTS reports (id INTEGER PRIMARY KEY AUTOINCREMENT, place_name TEXT NOT NULL, total_reviews INTEGER, positive_count INTEGER, neutral_count INTEGER, negative_count INTEGER, avg_sentiment_type TEXT, positive_wordcloud TEXT, neutral_wordcloud TEXT, negative_wordcloud TEXT, positive_bigram_chart TEXT, neutral_bigram_chart TEXT, negative_bigram_chart TEXT, venn_diagram TEXT, improvement_suggestions TEXT, strengths_to_promote TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    cursor.execute('''CREATE TABLE IF NOT EXISTS reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, 
+        place_name TEXT NOT NULL, 
+        total_reviews INTEGER, 
+        positive_count INTEGER, 
+        neutral_count INTEGER, 
+        negative_count INTEGER, 
+        avg_sentiment_type TEXT, 
+        positive_wordcloud TEXT, 
+        neutral_wordcloud TEXT, 
+        negative_wordcloud TEXT, 
+        positive_bigram_chart TEXT, 
+        neutral_bigram_chart TEXT, 
+        negative_bigram_chart TEXT, 
+        venn_diagram TEXT, 
+        improvement_suggestions TEXT, 
+        strengths_to_promote TEXT, 
+        nss REAL,
+        negative_ratio REAL,
+        sentiment_trend TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
     conn.commit()
     conn.close()
 
@@ -555,7 +714,7 @@ def predict_page():
             conn.close()
             if report_data:
                 report_dict = dict(report_data)
-                for key in ['improvement_suggestions', 'strengths_to_promote']:
+                for key in ['improvement_suggestions', 'strengths_to_promote', 'sentiment_trend']:
                     if report_dict.get(key):
                         try: report_dict[key] = json.loads(report_dict[key])
                         except: report_dict[key] = {}
@@ -607,12 +766,12 @@ def check_status(task_id):
     
     if task['status'] == 'failed':
         msg = task.get('message', 'Unknown error')
-        del TASKS[task_id] # Xóa task
+        del TASKS[task_id]
         return jsonify({'status': 'failed', 'message': msg})
         
     if task['status'] == 'completed':
         data = task['data']
-        del TASKS[task_id] # Xóa task sau khi trả về
+        del TASKS[task_id]
         return jsonify({'status': 'completed', 'result': data})
         
     return jsonify({'status': 'unknown'}), 500
@@ -641,7 +800,8 @@ def view_report(report_id):
     if data:
         report = dict(data)
         report['created_at'] = datetime.strptime(report['created_at'], '%Y-%m-%d %H:%M:%S.%f').strftime('%H:%M - %d/%m/%Y')
-        for k in ['improvement_suggestions', 'strengths_to_promote']:
+        # Parse JSON cho các trường chi tiết
+        for k in ['improvement_suggestions', 'strengths_to_promote', 'sentiment_trend']:
             if report.get(k):
                 try: report[k] = json.loads(report[k])
                 except: report[k] = None

@@ -21,13 +21,13 @@
             <a href="/analysis_history" class="header-btn"><i class="fas fa-history"></i> <span>Lịch sử</span></a>
             <a href="/logout" class="header-btn btn-logout" title="Đăng xuất">
                 <i class="fas fa-power-off"></i>
-                <span class="logout-text">Thoát</span>
+                <span class="logout-text">Đăng xuất</span>
             </a>
         </div>
     </header>
 
     <div class="main-container">
-        <!-- Cột bên trái - Công cụ và Phân tích nhanh -->
+        <!-- Cột bên trái - Công cụ -->
         <div class="sidebar">
             <div class="card">
                 <div class="card-header">
@@ -59,7 +59,7 @@
         <div class="content">
             <div id="reviews-result">
                 {% if latest_report %}
-                    <!-- Đánh giá tổng quan -->
+                    <!-- 1. Đánh giá tổng quan -->
                     <div class="card summary-card">
                         <div class="card-header">
                             <h2 id="summary-title" data-timestamp="{{ latest_report.created_at }}">
@@ -67,53 +67,66 @@
                             </h2>
                         </div>
                         <div class="summary-stats">
-                            <div class="stat-item stat-school">
-                                <h4>Trường</h4>
-                                <p>Đại học Bình Dương</p>
+                            <div class="stat-item stat-school"><h4>Trường</h4><p>Đại học Bình Dương</p></div>
+                            <div class="stat-item"><h4>Tổng bình luận</h4><p>{{ latest_report.total_reviews }}</p></div>
+                            <div class="stat-item"><h4>Nhận xét chung</h4><p class="sentiment-badge">{{ latest_report.avg_sentiment_type }}</p></div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Chỉ số Sức khỏe Thương hiệu -->
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <h3><i class="fas fa-heartbeat"></i> Net Sentiment Score (NSS)</h3>
+                            <div class="metric-value 
+                                {% if latest_report.nss > 0 %}nss-positive
+                                {% elif latest_report.nss < 0 %}nss-negative
+                                {% else %}nss-neutral{% endif %}">
+                                {{ latest_report.nss }}
                             </div>
-                            <div class="stat-item">
-                                <h4>Tổng bình luận</h4>
-                                <p>{{ latest_report.total_reviews }}</p>
-                            </div>
-                            <div class="stat-item">
-                                <h4>Nhận xét chung</h4>
-                                <p class="sentiment-badge">{{ latest_report.avg_sentiment_type }}</p>
+                        </div>
+                        <div class="metric-card">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Tỷ lệ Tiêu cực</h3>
+                            <div class="metric-value 
+                                {% if latest_report.negative_ratio >= 20 %}ratio-danger
+                                {% elif latest_report.negative_ratio >= 10 %}ratio-warning
+                                {% else %}ratio-safe{% endif %}">
+                                {{ latest_report.negative_ratio }}%
                             </div>
                         </div>
                     </div>
 
-                    <!-- === CARD PHÂN TÍCH CHỦ ĐỀ (GỘP) === -->
-                    {% if latest_report.strengths_to_promote or latest_report.improvement_suggestions %}
+                    <!-- 3. Biểu đồ Xu hướng -->
+                    {% if latest_report.sentiment_trend %}
                     <div class="card chart-card full-width">
                         <div class="card-header">
-                            <h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Chê</h3>
+                            <h3><i class="fas fa-chart-line"></i> Xu hướng Cảm xúc theo Thời gian</h3>
                         </div>
                         <div class="card-body">
-                            <!-- Biểu đồ cột so sánh -->
+                            <div class="chart-container" style="height: 350px;">
+                                <canvas id="trendChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 4. Phân tích Chủ đề (GỘP) -->
+                    {% if latest_report.strengths_to_promote or latest_report.improvement_suggestions %}
+                    <div class="card chart-card full-width">
+                        <div class="card-header"><h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Phàn nàn</h3></div>
+                        <div class="card-body">
                             <div class="chart-container" id="topic-chart-container" style="margin-bottom: 30px; display: none; height: 300px;">
                                 <canvas id="topicComparisonChart"></canvas>
                             </div>
                     
-                            <!-- Điểm cần phát huy -->
                             {% if latest_report.strengths_to_promote %}
                             <div class="topic-section">
-                                <h4 style="font-size: 18px; margin-bottom: 15px; color: var(--positive-color);"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4>
+                                <h4 style="font-size: 18px; margin-bottom: 15px; color: #28a745;"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4>
                                 <ul class="suggestions-list">
                                     {% for topic, data in latest_report.strengths_to_promote.items()|sort(attribute='1.count', reverse=True) %}
-                                    {% if data.count >= 2 %}
+                                    {% if data.count > 5 %}
                                     <li class="suggestion-item">
-                                        <div class="suggestion-header">
-                                            <span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span>
-                                            <span class="suggestion-count strength-count">{{ data.count }} lượt khen</span>
-                                        </div>
-                                        <div class="suggestion-examples" style="display: none;">
-                                            <p><strong>Một số ví dụ:</strong></p>
-                                            <ul>
-                                                {% for ex in data.examples %}
-                                                <li>"{{ ex }}"</li>
-                                                {% endfor %}
-                                            </ul>
-                                        </div>
+                                        <div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span><span class="suggestion-count strength-count">{{ data.count }} lượt khen</span></div>
+                                        <div class="suggestion-examples" style="display: none;"><p><strong>Ví dụ:</strong></p><ul>{% for ex in data.examples %}<li>"{{ ex }}"</li>{% endfor %}</ul></div>
                                     </li>
                                     {% endif %}
                                     {% endfor %}
@@ -121,26 +134,15 @@
                             </div>
                             {% endif %}
                     
-                            <!-- Gợi ý Cải thiện -->
                             {% if latest_report.improvement_suggestions %}
                              <div class="topic-section" style="margin-top: 30px;">
-                                <h4 style="font-size: 18px; margin-bottom: 15px; color: var(--negative-color);"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4>
+                                <h4 style="font-size: 18px; margin-bottom: 15px; color: #dc3545;"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4>
                                 <ul class="suggestions-list">
                                     {% for topic, data in latest_report.improvement_suggestions.items()|sort(attribute='1.count', reverse=True) %}
-                                    {% if data.count >= 3 %}
+                                    {% if data.count > 5 %}
                                     <li class="suggestion-item">
-                                        <div class="suggestion-header">
-                                            <span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span>
-                                            <span class="suggestion-count">{{ data.count }} phàn nàn</span>
-                                        </div>
-                                        <div class="suggestion-examples" style="display: none;">
-                                            <p><strong>Một số ví dụ:</strong></p>
-                                            <ul>
-                                                {% for ex in data.examples %}
-                                                <li>"{{ ex }}"</li>
-                                                {% endfor %}
-                                            </ul>
-                                        </div>
+                                        <div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> {{ topic }}</span><span class="suggestion-count">{{ data.count }} phàn nàn</span></div>
+                                        <div class="suggestion-examples" style="display: none;"><p><strong>Ví dụ:</strong></p><ul>{% for ex in data.examples %}<li>"{{ ex }}"</li>{% endfor %}</ul></div>
                                     </li>
                                     {% endif %}
                                     {% endfor %}
@@ -151,54 +153,30 @@
                     </div>
                     {% endif %}
 
-                    <!-- Khu vực biểu đồ -->
+                    <!-- 5. Các biểu đồ khác -->
                     <div class="charts-grid">
                         <div class="card chart-card">
                             <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Tỷ lệ Cảm xúc</h3></div>
-                            <div class="card-body chart-container pie-chart-wrapper">
-                                <canvas id="sentimentPieChart"></canvas>
-                            </div>
+                            <div class="card-body chart-container pie-chart-wrapper"><canvas id="sentimentPieChart"></canvas></div>
                         </div>
-
                         <div class="card chart-card">
                             <div class="card-header"><h3><i class="fas fa-circle-notch"></i> Biểu đồ Venn</h3></div>
-                            <div class="card-body">
-                                <img src="data:image/png;base64,{{ latest_report.venn_diagram }}" alt="Biểu đồ Venn">
-                            </div>
+                            <div class="card-body"><img src="data:image/png;base64,{{ latest_report.venn_diagram }}" alt="Biểu đồ Venn"></div>
                         </div>
-                        
                         <div class="card chart-card full-width">
                             <div class="card-header"><h3><i class="fas fa-cloud"></i> Word Cloud</h3></div>
                             <div class="card-body wordcloud-container">
-                                <div class="wordcloud-item">
-                                    <h4>Tích cực</h4>
-                                    <img src="data:image/png;base64,{{ latest_report.positive_wordcloud }}" alt="Word Cloud Tích cực">
-                                </div>
-                                <div class="wordcloud-item">
-                                    <h4>Trung tính</h4>
-                                    <img src="data:image/png;base64,{{ latest_report.neutral_wordcloud }}" alt="Word Cloud Trung tính">
-                                </div>
-                                <div class="wordcloud-item">
-                                    <h4>Tiêu cực</h4>
-                                    <img src="data:image/png;base64,{{ latest_report.negative_wordcloud }}" alt="Word Cloud Tiêu cực">
-                                </div>
+                                <div class="wordcloud-item"><h4>Tích cực</h4><img src="data:image/png;base64,{{ latest_report.positive_wordcloud }}" alt="Word Cloud Tích cực"></div>
+                                <div class="wordcloud-item"><h4>Trung tính</h4><img src="data:image/png;base64,{{ latest_report.neutral_wordcloud }}" alt="Word Cloud Trung tính"></div>
+                                <div class="wordcloud-item"><h4>Tiêu cực</h4><img src="data:image/png;base64,{{ latest_report.negative_wordcloud }}" alt="Word Cloud Tiêu cực"></div>
                             </div>
                         </div>
-
                         <div class="card chart-card full-width">
-                            <div class="card-header">
-                                <h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3>
-                            </div>
+                            <div class="card-header"><h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3></div>
                             <div class="card-body">
-                                <div class="ngram-stacked-item">
-                                    <img src="data:image/png;base64,{{ latest_report.positive_bigram_chart }}" alt="Bigram Tích cực">
-                                </div>
-                                <div class="ngram-stacked-item">
-                                    <img src="data:image/png;base64,{{ latest_report.neutral_bigram_chart }}" alt="Bigram Trung tính">
-                                </div>
-                                <div class="ngram-stacked-item">
-                                    <img src="data:image/png;base64,{{ latest_report.negative_bigram_chart }}" alt="Bigram Tiêu cực">
-                                </div>
+                                <div class="ngram-stacked-item"><img src="data:image/png;base64,{{ latest_report.positive_bigram_chart }}" alt="Bigram Tích cực"></div>
+                                <div class="ngram-stacked-item"><img src="data:image/png;base64,{{ latest_report.neutral_bigram_chart }}" alt="Bigram Trung tính"></div>
+                                <div class="ngram-stacked-item"><img src="data:image/png;base64,{{ latest_report.negative_bigram_chart }}" alt="Bigram Tiêu cực"></div>
                             </div>
                         </div>
                     </div>
@@ -223,7 +201,6 @@
     </div>
 
     <script>
-    // Cấu hình mặc định cho tất cả request jQuery để tự động kèm token CSRF
     $.ajaxSetup({
         beforeSend: function(xhr, settings) {
             if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -232,39 +209,31 @@
         }
     });
 
-    // --- BIẾN TOÀN CỤC CHO POLLING ---
     let errorCount = 0;
     const MAX_RETRIES = 20;
 
-    // --- CÁC HÀM XỬ LÝ (HELPER FUNCTIONS) ---
-    // Hàm vẽ biểu đồ so sánh chủ đề
+    // --- HÀM VẼ BIỂU ĐỒ BAR (CHỦ ĐỀ) ---
     function createTopicComparisonChart(strengthsData, suggestionsData, canvasId) {
         if (!strengthsData || !suggestionsData) return;
-
         const suggestionTopics = Object.keys(suggestionsData);
         const commonTopics = Object.keys(strengthsData).filter(topic => suggestionTopics.includes(topic));
 
         if (commonTopics.length > 0) {
-            const chartContainer = $(`#${canvasId}`).parent();
-            chartContainer.show();
-
-            const labels = commonTopics;
+            $(`#${canvasId}`).parent().show();
             const strengthCounts = commonTopics.map(topic => strengthsData[topic].count);
             const suggestionCounts = commonTopics.map(topic => suggestionsData[topic].count);
 
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            new Chart(ctx, {
+            new Chart(document.getElementById(canvasId).getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: commonTopics,
                     datasets: [
                         { label: 'Lượt khen', data: strengthCounts, backgroundColor: '#28a745', borderColor: '#218838', borderWidth: 1 },
                         { label: 'Phàn nàn', data: suggestionCounts, backgroundColor: '#dc3545', borderColor: '#c82333', borderWidth: 1 }
                     ]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
+                    responsive: true, maintainAspectRatio: false,
                     scales: { y: { beginAtZero: true, title: { display: true, text: 'Số lượng' } } },
                     plugins: { legend: { position: 'top' }, title: { display: true, text: 'So sánh Khen và Chê' } }
                 }
@@ -272,7 +241,7 @@
         }
     }
 
-    // Hàm hiển thị danh sách bình luận (khi filter)
+    // --- HÀM RENDER REVIEW ---
     function displayReviews(reviews) { 
         let reviewsHtml = ''; 
         if (!reviews || reviews.length === 0) { 
@@ -290,26 +259,19 @@
         $('#reviews-list').html(reviewsHtml); 
     }
 
-    // Hàm Render toàn bộ kết quả sau khi Polling thành công
+    // --- HÀM RENDER KẾT QUẢ AJAX (Chính) ---
     function renderAnalysisResult(response) {
         let topicAnalysisHtml = '';
         const strengths = response.strengths_to_promote;
         const suggestions = response.improvement_suggestions;
         
-        // Tạo HTML cho phần phân tích chủ đề (nếu có)
+        // Tạo HTML chủ đề
         if ((strengths && Object.keys(strengths).length > 0) || (suggestions && Object.keys(suggestions).length > 0)) {
-            topicAnalysisHtml += `
-            <div class="card chart-card full-width">
-                <div class="card-header"><h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Chê</h3></div>
-                <div class="card-body">
-                    <div class="chart-container" id="ajax-topic-chart-container" style="margin-bottom: 30px; display: none; height: 300px;">
-                        <canvas id="ajaxTopicComparisonChart"></canvas>
-                    </div>`;
-            
-            if (strengths && Object.keys(strengths).length > 0) {
-                const sortedStrengths = Object.entries(strengths).filter(([, data]) => data.count >= 2).sort(([, a], [, b]) => b.count - a.count);
+            topicAnalysisHtml += `<div class="card chart-card full-width"><div class="card-header"><h3><i class="fas fa-balance-scale"></i> Phân tích Chủ đề Khen / Phàn nàn</h3></div><div class="card-body"><div class="chart-container" id="ajax-topic-chart-container" style="margin-bottom: 30px; display: none; height: 300px;"><canvas id="ajaxTopicComparisonChart"></canvas></div>`;
+            if (strengths) {
+                const sortedStrengths = Object.entries(strengths).filter(([, data]) => data.count > 5).sort(([, a], [, b]) => b.count - a.count);
                 if (sortedStrengths.length > 0) {
-                    topicAnalysisHtml += `<div class="topic-section"><h4 style="font-size: 18px; margin-bottom: 15px; color: var(--positive-color);"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4><ul class="suggestions-list">`;
+                    topicAnalysisHtml += `<div class="topic-section"><h4 style="font-size: 18px; margin-bottom: 15px; color: #28a745;"><i class="fas fa-thumbs-up"></i> Điểm cần phát huy</h4><ul class="suggestions-list">`;
                     sortedStrengths.forEach(([topic, data]) => {
                         let examplesHtml = data.examples.map(ex => `<li>"${ex}"</li>`).join('');
                         topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count strength-count">${data.count} khen</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
@@ -317,11 +279,10 @@
                     topicAnalysisHtml += '</ul></div>';
                 }
             }
-
-            if (suggestions && Object.keys(suggestions).length > 0) {
-                const sortedSuggestions = Object.entries(suggestions).filter(([, data]) => data.count >= 3).sort(([, a], [, b]) => b.count - a.count);
+            if (suggestions) {
+                const sortedSuggestions = Object.entries(suggestions).filter(([, data]) => data.count > 5).sort(([, a], [, b]) => b.count - a.count);
                 if (sortedSuggestions.length > 0) {
-                    topicAnalysisHtml += `<div class="topic-section" style="margin-top: 30px;"><h4 style="font-size: 18px; margin-bottom: 15px; color: var(--negative-color);"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4><ul class="suggestions-list">`;
+                    topicAnalysisHtml += `<div class="topic-section" style="margin-top: 30px;"><h4 style="font-size: 18px; margin-bottom: 15px; color: #dc3545;"><i class="fas fa-wrench"></i> Gợi ý Cải thiện</h4><ul class="suggestions-list">`;
                     sortedSuggestions.forEach(([topic, data]) => {
                         let examplesHtml = data.examples.map(ex => `<li>"${ex}"</li>`).join('');
                         topicAnalysisHtml += `<li class="suggestion-item"><div class="suggestion-header"><span class="suggestion-topic"><i class="fas fa-tag"></i> ${topic}</span><span class="suggestion-count">${data.count} phàn nàn</span></div><div class="suggestion-examples" style="display: none;"><p><strong>Ví dụ:</strong></p><ul>${examplesHtml}</ul></div></li>`;
@@ -332,17 +293,35 @@
             topicAnalysisHtml += '</div></div>';
         }
 
-        // Tạo HTML tổng thể cho vùng kết quả
-        let reviewsHtml = `
+        let nssClass = response.nss > 0 ? 'nss-positive' : (response.nss < 0 ? 'nss-negative' : 'nss-neutral');
+        let ratioClass = response.negative_ratio >= 20 ? 'ratio-danger' : (response.negative_ratio >= 10 ? 'ratio-warning' : 'ratio-safe');
+
+        // Render HTML tổng thể
+        let html = `
             <div class="card summary-card">
-                <div class="card-header">
-                    <h2><i class="fas fa-chart-bar"></i> Đánh giá Tổng quan</h2>
-                </div>
+                <div class="card-header"><h2><i class="fas fa-chart-bar"></i> Đánh giá Tổng quan</h2></div>
                 <div class="summary-stats">
                     <div class="stat-item stat-school"><h4>Trường</h4><p>Đại học Bình Dương</p></div>
                     <div class="stat-item"><h4>Tổng bình luận</h4><p>${response.total_reviews}</p></div>
                     <div class="stat-item"><h4>Nhận xét chung</h4><p class="sentiment-badge">${response.avg_sentiment_type}</p></div>
                 </div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3><i class="fas fa-heartbeat"></i> Net Sentiment Score (NSS)</h3>
+                    <div class="metric-value ${nssClass}">${response.nss}</div>
+                </div>
+                <div class="metric-card">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Tỷ lệ Tiêu cực</h3>
+                    <div class="metric-value ${ratioClass}">${response.negative_ratio}%</div>
+                </div>
+            </div>
+
+            <!-- BIỂU ĐỒ XU HƯỚNG -->
+            <div class="card chart-card full-width">
+                <div class="card-header"><h3><i class="fas fa-chart-line"></i> Xu hướng Cảm xúc theo Thời gian</h3></div>
+                <div class="card-body"><div class="chart-container" style="height: 350px;"><canvas id="trendChart"></canvas></div></div>
             </div>
 
             ${topicAnalysisHtml}
@@ -351,14 +330,7 @@
                 <div class="card chart-card"><div class="card-header"><h3><i class="fas fa-chart-pie"></i> Tỷ lệ Cảm xúc</h3></div><div class="card-body chart-container pie-chart-wrapper"><canvas id="sentimentPieChart"></canvas></div></div>
                 <div class="card chart-card"><div class="card-header"><h3><i class="fas fa-circle-notch"></i> Biểu đồ Venn</h3></div><div class="card-body"><img src="data:image/png;base64,${response.venn_diagram}" alt="Biểu đồ Venn"></div></div>
                 <div class="card chart-card full-width"><div class="card-header"><h3><i class="fas fa-cloud"></i> Word Cloud</h3></div><div class="card-body wordcloud-container"><div class="wordcloud-item"><h4>Tích cực</h4><img src="data:image/png;base64,${response.positive_wordcloud}" alt="Word Cloud Tích cực"></div><div class="wordcloud-item"><h4>Trung tính</h4><img src="data:image/png;base64,${response.neutral_wordcloud}" alt="Word Cloud Trung tính"></div><div class="wordcloud-item"><h4>Tiêu cực</h4><img src="data:image/png;base64,${response.negative_wordcloud}" alt="Word Cloud Tiêu cực"></div></div></div>
-                <div class="card chart-card full-width">
-                    <div class="card-header"><h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3></div>
-                    <div class="card-body">
-                        <div class="ngram-stacked-item"><img src="data:image/png;base64,${response.positive_bigram_chart}" alt="Bigram Tích cực"></div>
-                        <div class="ngram-stacked-item"><img src="data:image/png;base64,${response.neutral_bigram_chart}" alt="Bigram Trung tính"></div>
-                        <div class="ngram-stacked-item"><img src="data:image/png;base64,${response.negative_bigram_chart}" alt="Bigram Tiêu cực"></div>
-                    </div>
-                </div>
+                <div class="card chart-card full-width"><div class="card-header"><h3><i class="fas fa-stream"></i> Phân tích tần suất từ (2-grams)</h3></div><div class="card-body"><div class="ngram-stacked-item"><img src="data:image/png;base64,${response.positive_bigram_chart}" alt="Bigram Tích cực"></div><div class="ngram-stacked-item"><img src="data:image/png;base64,${response.neutral_bigram_chart}" alt="Bigram Trung tính"></div><div class="ngram-stacked-item"><img src="data:image/png;base64,${response.negative_bigram_chart}" alt="Bigram Tiêu cực"></div></div></div>
             </div>
             
             <div class="card reviews-card">
@@ -366,222 +338,165 @@
                 <div id="reviews-list" class="card-body"></div>
             </div>`;
 
-        // Render HTML
-        $('#reviews-result').html(reviewsHtml);
-        
-        // Hiển thị danh sách review (lưu vào biến để filter)
-        const originalReviews = response.reviews;
-        displayReviews(originalReviews);
+        $('#reviews-result').html(html);
+        displayReviews(response.reviews);
         
         // Vẽ biểu đồ Pie
-        var ctx = document.getElementById('sentimentPieChart').getContext('2d');
-        new Chart(ctx, {
+        new Chart(document.getElementById('sentimentPieChart').getContext('2d'), {
             type: 'pie',
             data: {
                 labels: ['Tích cực', 'Trung tính', 'Tiêu cực'],
                 datasets: [{
                     data: [response.positive_count, response.neutral_count, response.negative_count],
-                    backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
-                    borderColor: '#fff',
-                    borderWidth: 2
+                    backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderColor: '#fff', borderWidth: 2
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } },
-                layout: { padding: 0 }
-            }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } }, layout: { padding: 0 } }
         });
 
-        // Vẽ biểu đồ cột so sánh
+        // Vẽ biểu đồ Bar chủ đề
         createTopicComparisonChart(response.strengths_to_promote, response.improvement_suggestions, 'ajaxTopicComparisonChart');
 
-        // Gán lại sự kiện click cho các nút filter
+        // VẼ BIỂU ĐỒ XU HƯỚNG
+        if (response.sentiment_trend) {
+            new Chart(document.getElementById('trendChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: response.sentiment_trend.labels,
+                    datasets: [
+                        { label: 'Tích cực', data: response.sentiment_trend.pos, borderColor: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.1)', borderWidth: 2, tension: 0.3, fill: true },
+                        { label: 'Tiêu cực', data: response.sentiment_trend.neg, borderColor: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.1)', borderWidth: 2, tension: 0.3, fill: true },
+                        { label: 'Trung tính', data: response.sentiment_trend.neu, borderColor: '#ffc107', borderWidth: 1, borderDash: [5, 5], tension: 0.3, fill: false }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                    scales: { y: { beginAtZero: true } }, plugins: { title: { display: true, text: 'Diễn biến theo tháng' } }
+                }
+            });
+        }
+
+        // Sự kiện lọc review
         $('.filter-button').off('click').on('click', function() { 
             $('.filter-button').removeClass('active'); 
             $(this).addClass('active'); 
-            const selectedSentiment = $(this).data('filter'); 
-            if (selectedSentiment === 'all') { 
-                displayReviews(originalReviews); 
-            } else { 
-                const filteredReviews = originalReviews.filter(review => review.sentiment_type === selectedSentiment); 
-                displayReviews(filteredReviews); 
-            } 
+            const filter = $(this).data('filter'); 
+            if (filter === 'all') displayReviews(response.reviews); 
+            else displayReviews(response.reviews.filter(r => r.sentiment_type === filter)); 
         });
     }
 
-    // Hàm POLLING: Hỏi server liên tục với cơ chế Retry
+    // --- POLLING FUNCTION ---
     function pollTaskStatus(taskId) {
         $.ajax({
             url: '/check_status/' + taskId,
-            type: 'GET',
-            timeout: 30000, // Timeout dài (30s) để tránh lỗi mạng chập chờn
+            type: 'GET', timeout: 30000,
             success: function(response) {
-                // Thành công -> Reset đếm lỗi
                 errorCount = 0;
-
                 if (response.status === 'processing') {
-                    // Cập nhật giao diện loading để người dùng yên tâm
                     $('.loading-overlay p').html('Đang xử lý...<br><small style="font-size: 13px; color: #666;">(Vui lòng không tắt trình duyệt)</small>');
-                    
-                    // Đợi 2 giây rồi hỏi lại
-                    setTimeout(function() {
-                        pollTaskStatus(taskId);
-                    }, 2000);
-
+                    setTimeout(() => pollTaskStatus(taskId), 2000);
                 } else if (response.status === 'completed') {
-                    // Hoàn thành
                     renderAnalysisResult(response.result);
                     $('#loading').hide();
-                    
                 } else if (response.status === 'failed') {
-                    // Thất bại
                     $('#loading').hide();
-                    alert('Phân tích thất bại: ' + response.message);
-                    $('#reviews-result').html('<div class="card error-card"><i class="fas fa-exclamation-triangle"></i><h2>Lỗi Xử Lý</h2><p>' + response.message + '</p></div>');
-                } else {
-                    $('#loading').hide();
-                    alert('Trạng thái không xác định từ server.');
+                    alert('Lỗi: ' + response.message);
                 }
             },
-            error: function(xhr, status, error) {
-                console.log("Polling error:", status, error);
-
-                // Trường hợp 1: Task ID không tồn tại (404) -> Server restart hoặc session chết
-                if (xhr.status === 404) {
-                    $('#loading').hide();
-                    alert('Phiên làm việc đã hết hạn hoặc Server đã khởi động lại. Vui lòng thử lại.');
-                    return;
-                }
-
-                // Trường hợp 2: Lỗi mạng/Timeout -> Thử lại
+            error: function(xhr) {
+                if (xhr.status === 404) { $('#loading').hide(); alert('Phiên hết hạn, thử lại.'); return; }
                 errorCount++;
                 if (errorCount <= MAX_RETRIES) {
-                    $('.loading-overlay p').html(`Đường truyền gián đoạn (${errorCount}/${MAX_RETRIES})...<br><small>Đang thử kết nối lại...</small>`);
-                    
-                    // Đợi 3 giây rồi thử lại
-                    setTimeout(function() {
-                        pollTaskStatus(taskId);
-                    }, 3000);
+                    $('.loading-overlay p').html(`Mất kết nối (${errorCount}/${MAX_RETRIES})... Đang thử lại...`);
+                    setTimeout(() => pollTaskStatus(taskId), 3000);
                 } else {
-                    // Quá số lần thử -> Bỏ cuộc
                     $('#loading').hide();
-                    alert('Mất kết nối với Server quá lâu. Vui lòng kiểm tra đường truyền.');
+                    alert('Mất kết nối server quá lâu.');
                 }
             }
         });
     }
 
     $(document).ready(function() {
-        // Hàm định dạng ngày giờ
-        function formatDateTime(isoString) {
-            if (!isoString) return '';
-            const date = new Date(isoString);
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${hours}:${minutes} - ${day}/${month}/${year}`;
-        }
-
-        // Cập nhật timestamp nếu có sẵn
+        // Format ngày giờ header
         const summaryTitle = $('#summary-title');
         if (summaryTitle.length) {
-            const timestamp = summaryTitle.data('timestamp');
-            const formattedTime = formatDateTime(timestamp);
-            summaryTitle.html(`<i class="fas fa-chart-bar"></i> Đánh giá Tổng quan <small>(${formattedTime})</small>`);
+            const date = new Date(summaryTitle.data('timestamp'));
+            const str = `${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')} - ${String(date.getDate()).padStart(2,'0')}/${String(date.getMonth()+1).padStart(2,'0')}/${date.getFullYear()}`;
+            summaryTitle.html(`<i class="fas fa-chart-bar"></i> Đánh giá Tổng quan <small>(${str})</small>`);
         }
         
-        // --- LOGIC CHO REPORT ĐÃ CÓ SẴN (Server-side rendered) ---
+        // --- RENDER DỮ LIỆU TĨNH (Jinja2) ---
         {% if latest_report %}
-            // Vẽ biểu đồ Pie ban đầu
-            var ctx = document.getElementById('sentimentPieChart').getContext('2d');
-            new Chart(ctx, {
+            new Chart(document.getElementById('sentimentPieChart').getContext('2d'), {
                 type: 'pie',
                 data: {
                     labels: ['Tích cực', 'Trung tính', 'Tiêu cực'],
                     datasets: [{
                         data: [ {{ latest_report.positive_count }}, {{ latest_report.neutral_count }}, {{ latest_report.negative_count }} ],
-                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
-                        borderColor: '#fff',
-                        borderWidth: 2
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'], borderColor: '#fff', borderWidth: 2
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } }
-                    },
-                    layout: { padding: 0 }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } }, layout: { padding: 0 } }
             });
             
-            // Vẽ biểu đồ so sánh ban đầu
-            const initialStrengths = {{ latest_report.strengths_to_promote | tojson | safe }};
-            const initialSuggestions = {{ latest_report.improvement_suggestions | tojson | safe }};
-            createTopicComparisonChart(initialStrengths, initialSuggestions, 'topicComparisonChart');
+            const initStrengths = {{ latest_report.strengths_to_promote | tojson | safe }};
+            const initSuggestions = {{ latest_report.improvement_suggestions | tojson | safe }};
+            createTopicComparisonChart(initStrengths, initSuggestions, 'topicComparisonChart');
+
+            // Render biểu đồ xu hướng tĩnh
+            {% if latest_report.sentiment_trend %}
+            var trendData = {{ latest_report.sentiment_trend | tojson | safe }};
+            new Chart(document.getElementById('trendChart').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: trendData.labels,
+                    datasets: [
+                        { label: 'Tích cực', data: trendData.pos, borderColor: '#28a745', backgroundColor: 'rgba(40, 167, 69, 0.1)', borderWidth: 2, tension: 0.3, fill: true },
+                        { label: 'Tiêu cực', data: trendData.neg, borderColor: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.1)', borderWidth: 2, tension: 0.3, fill: true },
+                        { label: 'Trung tính', data: trendData.neu, borderColor: '#ffc107', borderWidth: 1, borderDash: [5, 5], tension: 0.3, fill: false }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+            {% endif %}
         {% endif %}
 
-        // Xử lý form "Phân tích nhanh văn bản"
+        // Form phân tích nhanh
         $('#predict-form').submit(function(e) {
             e.preventDefault();
-            var resultDiv = $('#result');
-            resultDiv.html('<p class="loading-text"><i class="fas fa-spinner fa-spin"></i> Đang phân tích...</p>');
-            $.ajax({ type: 'POST', url: '/predict', data: $(this).serialize(),
-                success: function(response) {
-                    let sentimentClass = '';
-                    if (response.sentiment_type === 'Tích cực') sentimentClass = 'sentiment-positive';
-                    else if (response.sentiment_type === 'Tiêu cực') sentimentClass = 'sentiment-negative';
-                    else sentimentClass = 'sentiment-neutral';
-                    resultDiv.html( `<div class="quick-review ${sentimentClass}">` + '<strong>Kết quả:</strong> ' + response.sentiment_type + '</div>');
-                },
-                error: function() { resultDiv.html('<div class="error">Có lỗi xảy ra.</div>'); }
+            $('#result').html('<p class="loading-text"><i class="fas fa-spinner fa-spin"></i> Đang phân tích...</p>');
+            $.post('/predict', $(this).serialize(), function(res) {
+                let cls = res.sentiment_type === 'Tích cực' ? 'sentiment-positive' : (res.sentiment_type === 'Tiêu cực' ? 'sentiment-negative' : 'sentiment-neutral');
+                $('#result').html(`<div class="quick-review ${cls}"><strong>Kết quả:</strong> ${res.sentiment_type}</div>`);
             });
         });
         
-        // Xử lý form "Phân tích MXH" -> GỌI POLLING
+        // Form Crawl data
         $('#reviews-form').submit(function(e) {
             e.preventDefault();
-            
-            // Reset lỗi
             errorCount = 0;
-
             $('#loading').show();
-            $('.loading-overlay p').text('Đang khởi tạo tác vụ...');
+            $('.loading-overlay p').text('Đang khởi tạo...');
             $('#reviews-result').empty();
 
-            $.ajax({
-                type: 'POST', 
-                url: '/get_reviews', 
-                data: $(this).serialize(),
-                timeout: 30000,
-                success: function(response) {
-                    // Nếu server trả về processing + task_id, bắt đầu polling
-                    if (response.status === 'processing') {
-                        console.log("Task ID nhận được: " + response.task_id);
-                        pollTaskStatus(response.task_id);
-                    } else {
-                        $('#loading').hide();
-                        alert('Phản hồi không hợp lệ từ server');
-                    }
-                },
-                error: function(xhr) { 
+            $.post('/get_reviews', $(this).serialize())
+                .done(function(res) {
+                    if (res.status === 'processing') pollTaskStatus(res.task_id);
+                })
+                .fail(function() {
                     $('#loading').hide();
-                    let msg = "Có lỗi xảy ra khi khởi tạo.";
-                    if(xhr.responseJSON && xhr.responseJSON.message) msg = xhr.responseJSON.message;
-                    $('#reviews-result').html('<div class="card error-card"><i class="fas fa-exclamation-triangle"></i><h2>Lỗi Khởi Tạo</h2><p>'+msg+'</p></div>'); 
-                }
-            });
+                    alert("Lỗi khởi tạo.");
+                });
         });
 
-        // Event delegation cho accordion
         $('#reviews-result').on('click', '.suggestion-header', function() {
             $(this).siblings('.suggestion-examples').slideToggle('fast');
         });
-
     });
     </script>
 </body>
